@@ -19,7 +19,7 @@ This project folder is intended to become its own repository. HACS works best wh
 
 ## Install
 
-1. Publish this folder as its own GitHub repository, for example `HA-Kuehlgeraet-Cockpit`.
+1. Publish this folder as its own GitHub repository, for example `ha-kuehlgeraet-cockpit`.
 2. Add that repository to HACS as a custom integration.
 3. Install `Kuehlgeraet Cockpit`.
 4. Restart Home Assistant.
@@ -62,3 +62,4 @@ Updates the live cockpit sensor from the automation using a compact JSON payload
 
 - Update the documentation and issue tracker URLs in `manifest.json` if you publish under a different repository name.
 - The packaged blueprint is based on the Tibber + Shelly kurzfristtrend fridge control created in this workspace.
+
