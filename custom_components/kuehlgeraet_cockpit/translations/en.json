@@ -1,0 +1,30 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Kuehlgeraet Cockpit",
+        "description": "Install the cooling blueprint and export dashboard snippets into your Home Assistant configuration.",
+        "data": {
+          "install_blueprint": "Install blueprint",
+          "export_dashboard_snippets": "Export dashboard snippets",
+          "overwrite_existing": "Overwrite existing files",
+          "auto_install": "Export resources automatically after setup"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Kuehlgeraet Cockpit options",
+        "description": "Choose which files should be exported automatically.",
+        "data": {
+          "install_blueprint": "Install blueprint",
+          "export_dashboard_snippets": "Export dashboard snippets",
+          "overwrite_existing": "Overwrite existing files",
+          "auto_install": "Export resources automatically after setup"
+        }
+      }
+    }
+  }
+}

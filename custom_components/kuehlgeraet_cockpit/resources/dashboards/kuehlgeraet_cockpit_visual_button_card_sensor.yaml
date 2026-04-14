@@ -1,0 +1,79 @@
+type: custom:button-card
+entity: sensor.kuehlgeraet_cockpit_status
+show_name: false
+show_state: false
+show_icon: false
+tap_action:
+  action: more-info
+hold_action:
+  action: more-info
+styles:
+  card:
+    - padding: 20px
+    - border-radius: 24px
+    - border: 1px solid rgba(148, 228, 255, 0.22)
+    - background: linear-gradient(135deg, rgba(8,18,28,0.96), rgba(13,44,63,0.90) 58%, rgba(16,26,41,0.98))
+    - box-shadow: 0 22px 46px rgba(0,0,0,0.28)
+  grid:
+    - grid-template-areas: 'panel'
+    - grid-template-columns: 1fr
+  custom_fields:
+    panel:
+      - justify-self: stretch
+      - align-self: stretch
+custom_fields:
+  panel: |
+    [[[ 
+      const data = entity?.attributes || {};
+      const safe = (v, fallback='-') => (v === undefined || v === null || v === '') ? fallback : v;
+      const num = (v, fallback=0) => Number.isFinite(Number(v)) ? Number(v) : fallback;
+      const cheap = data.cheap_slot === true || String(data.cheap_slot).toLowerCase() === 'true';
+      const running = data.compressor_running === true || String(data.compressor_running).toLowerCase() === 'true';
+      const targetOn = String(safe(data.target_switch_state, '')).toLowerCase() === 'on';
+      const trend = String(safe(data.price_trend, 'unknown')).toLowerCase();
+      const trendLabel = {
+        rising_soon: 'PREIS STEIGT BALD',
+        falling_soon: 'GUENSTIGER SLOT KOMMT',
+        stable: 'PREIS STABIL',
+        unknown: 'TREND UNBEKANNT'
+      }[trend] || String(trend).toUpperCase();
+      const accent = running ? '#8fffd0' : (cheap ? '#8fe7ff' : '#ffd98a');
+      const pill = (label, value, color) => `
+        <div style="padding:10px 12px;border-radius:14px;background:${color};border:1px solid rgba(255,255,255,0.10);min-width:120px;">
+          <div style="font-size:10px;letter-spacing:0.14em;text-transform:uppercase;opacity:0.72;">${label}</div>
+          <div style="margin-top:4px;font-size:16px;font-weight:800;">${value}</div>
+        </div>`;
+      return `
+        <div style="font-family:Consolas, 'Courier New', monospace;color:#eef8ff;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;">
+            <div>
+              <div style="font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:rgba(224,244,255,0.72);">Cooling Cockpit</div>
+              <div style="margin-top:6px;font-size:30px;font-weight:800;letter-spacing:0.03em;color:${accent};">${safe(data.mode, entity?.state || 'idle').toUpperCase()}</div>
+              <div style="margin-top:8px;font-size:13px;color:rgba(235,248,255,0.82);">${safe(data.reason)}</div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3, minmax(110px, 1fr));gap:10px;min-width:min(100%, 380px);">
+              ${pill('Temperatur', `${safe(data.temperature_c)} C`, 'rgba(143,231,255,0.14)')}
+              ${pill('Leistung', `${safe(data.power_w)} W`, running ? 'rgba(111,255,194,0.16)' : 'rgba(255,255,255,0.08)')}
+              ${pill('Preis jetzt', `${safe(data.price)}`, cheap ? 'rgba(115,246,185,0.16)' : 'rgba(255,217,138,0.14)')}
+            </div>
+          </div>
+          <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;">
+            ${pill('Trend', trendLabel, trend === 'rising_soon' ? 'rgba(255,169,126,0.18)' : (trend === 'falling_soon' ? 'rgba(125,255,205,0.18)' : 'rgba(255,255,255,0.08)'))}
+            ${pill('Billige Stunde', cheap ? 'AKTIV' : 'AUS', cheap ? 'rgba(125,255,205,0.18)' : 'rgba(255,255,255,0.08)')}
+            ${pill('Kompressor', running ? 'LAEUFT' : 'RUHIG', running ? 'rgba(111,255,194,0.18)' : 'rgba(255,255,255,0.08)')}
+            ${pill('Relais Ziel', targetOn ? 'ON' : 'OFF', targetOn ? 'rgba(143,231,255,0.18)' : 'rgba(255,255,255,0.08)')}
+          </div>
+          <div style="margin-top:18px;padding:14px 16px;border-radius:18px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+              <div>
+                <div style="font-size:10px;letter-spacing:0.16em;text-transform:uppercase;opacity:0.72;">Bester Preis naechste ${safe(data.near_term_hours, '-')} h</div>
+                <div style="margin-top:4px;font-size:22px;font-weight:800;">${safe(data.best_price_next_hours)} <span style="font-size:14px;font-weight:600;opacity:0.72;">um ${safe(data.best_price_slot_next_hours)}</span></div>
+              </div>
+              <div style="text-align:right;min-width:180px;">
+                <div style="font-size:10px;letter-spacing:0.16em;text-transform:uppercase;opacity:0.72;">Effektive Schwellen</div>
+                <div style="margin-top:4px;font-size:15px;font-weight:800;">EIN ${safe(data.effective_on_temp)} C / AUS ${safe(data.effective_off_temp)} C</div>
+              </div>
+            </div>
+          </div>
+        </div>`;
+    ]]]

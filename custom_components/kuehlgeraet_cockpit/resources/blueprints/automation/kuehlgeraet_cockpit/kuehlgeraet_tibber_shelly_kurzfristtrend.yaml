@@ -1,0 +1,574 @@
+blueprint:
+  name: Tibber Kuehlgeraet Shelly mit Kurzfristtrend und Cockpit-Status steuern
+  description: >
+    Steuert ein Kuehlgeraet ueber ein Shelly-Schaltrelais mit
+    Leistungsmessung anhand der kommenden Tibber-Stundenpreise aus
+    tibber.get_prices und der Temperatur im Geraet, zum Beispiel ueber einen
+    Shelly Blue Sensor. Innerhalb eines konfigurierbaren Vorausblicks werden
+    die billigsten kommenden Stunden ermittelt; in diesen Stunden wird tiefer
+    vorgekuehlt, in allen anderen Stunden erst spaeter nachgekuehlt.
+    Zusaetzlich wird eine kurzfristige Preis-Tendenz bewertet: Wenn der
+    guenstigste Preis in den naechsten Stunden deutlich ueber dem aktuellen
+    Preis liegt, wird frueher vorgekuehlt. Wenn in den naechsten Stunden ein
+    deutlich guenstigerer Preis kommt, wird laenger gewartet. Ein laufender
+    Kompressor wird nicht hart abgeschaltet: Das Relais darf nur
+    ausgeschaltet werden, wenn der Leistungssensor unter den konfigurierten
+    Laufleistungs-Schwellwert faellt. Optional kann eine persistente
+    Debug-Benachrichtigung mit Preisbewertung, Trend und Schaltgrund
+    aktualisiert werden. Der Live-Status kann direkt in die Kuehlgeraet-Cockpit-Integration geschrieben werden.
+  domain: automation
+  input:
+    consumer_switch:
+      name: Shelly Schaltrelais
+      description: Schalter oder Relais, der das Kuehlgeraet mit Strom versorgt.
+      selector:
+        entity:
+          filter:
+            - domain: switch
+    power_sensor:
+      name: Shelly Leistungssensor
+      description: Sensor mit der aktuell gemessenen Leistung des Relais.
+      selector:
+        entity:
+          filter:
+            - domain: sensor
+              device_class: power
+    compressor_running_watts:
+      name: Laufleistungs-Schwellwert in Watt
+      description: >
+        Liegt die gemessene Leistung auf oder ueber diesem Wert, gilt der
+        Kompressor als aktiv und das Relais wird nicht ausgeschaltet.
+      default: 15
+      selector:
+        number:
+          min: 1
+          max: 500
+          step: 1
+          unit_of_measurement: W
+          mode: box
+    temperature_sensor:
+      name: Shelly Blue Temperatur-Sensor
+      description: Temperatur-Sensor im Kuehlgeraet.
+      selector:
+        entity:
+          filter:
+            - domain: sensor
+              device_class: temperature
+    tibber_home_name:
+      name: Tibber Home-Name optional
+      description: >
+        Falls dein Tibber-Account mehrere Homes hat, trage hier den Home-Key
+        aus der Antwort von tibber.get_prices ein. Wenn nur ein Home vorhanden
+        ist, kann das Feld leer bleiben; dann wird automatisch der erste
+        Eintrag verwendet.
+      default: ""
+      selector:
+        text:
+    lookahead_hours:
+      name: Vorausblick in Stunden
+      description: So viele kommende Stunden werden fuer die Preisbewertung betrachtet.
+      default: 12
+      selector:
+        number:
+          min: 1
+          max: 48
+          step: 1
+          unit_of_measurement: h
+          mode: slider
+    cheapest_hours_count:
+      name: Anzahl billigster Stunden
+      description: >
+        Wenn die aktuelle Stunde innerhalb der billigsten kommenden Stunden
+        liegt, wird der guenstige Temperaturbereich verwendet.
+      default: 3
+      selector:
+        number:
+          min: 1
+          max: 24
+          step: 1
+          unit_of_measurement: h
+          mode: slider
+    near_term_hours:
+      name: Kurzfristfenster in Stunden
+      description: >
+        So viele kommende Stunden werden fuer die kurzfristige Preis-Tendenz
+        geprueft.
+      default: 2
+      selector:
+        number:
+          min: 1
+          max: 8
+          step: 1
+          unit_of_measurement: h
+          mode: slider
+    near_term_trend_percent:
+      name: Kurzfristige Trend-Schwelle in Prozent
+      description: >
+        Ab dieser Abweichung zwischen aktuellem Preis und dem guenstigsten
+        Preis der naechsten Stunden gilt der Trend als steigend oder fallend.
+      default: 12
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+          unit_of_measurement: "%"
+          mode: slider
+    near_term_temp_shift:
+      name: Temperatur-Shift durch Kurzfristtrend
+      description: >
+        Bei steigenden Preisen werden die Schaltschwellen um diesen Wert
+        abgesenkt, bei fallenden Preisen entsprechend angehoben.
+      default: 0.5
+      selector:
+        number:
+          min: 0
+          max: 5
+          step: 0.1
+          unit_of_measurement: C
+          mode: box
+    cheap_on_temp:
+      name: Einschalten in billigen Stunden ab Temperatur
+      description: Ab diesem Wert wird in billigen Stunden eingeschaltet.
+      default: 4
+      selector:
+        number:
+          min: -40
+          max: 20
+          step: 0.1
+          unit_of_measurement: C
+          mode: box
+    cheap_off_temp:
+      name: Ausschalten in billigen Stunden bis Temperatur
+      description: Bis zu diesem Wert wird in billigen Stunden ausgekuehlt.
+      default: 2
+      selector:
+        number:
+          min: -40
+          max: 20
+          step: 0.1
+          unit_of_measurement: C
+          mode: box
+    expensive_on_temp:
+      name: Einschalten ausserhalb billiger Stunden ab Temperatur
+      description: Ab diesem Wert wird auch ausserhalb billiger Stunden eingeschaltet.
+      default: 6
+      selector:
+        number:
+          min: -40
+          max: 20
+          step: 0.1
+          unit_of_measurement: C
+          mode: box
+    expensive_off_temp:
+      name: Ausschalten ausserhalb billiger Stunden bis Temperatur
+      description: Unterhalb dieses Werts darf ausserhalb billiger Stunden ausgeschaltet werden.
+      default: 4
+      selector:
+        number:
+          min: -40
+          max: 20
+          step: 0.1
+          unit_of_measurement: C
+          mode: box
+    min_on_seconds:
+      name: Mindest-Einschaltdauer in Sekunden
+      description: Schuetzt den Kompressor vor zu kurzem Betrieb.
+      default: 300
+      selector:
+        number:
+          min: 0
+          max: 7200
+          step: 1
+          unit_of_measurement: s
+          mode: box
+    min_off_seconds:
+      name: Mindest-Ausschaltdauer in Sekunden
+      description: Schuetzt den Kompressor vor zu schnellem Wiederanlauf.
+      default: 300
+      selector:
+        number:
+          min: 0
+          max: 7200
+          step: 1
+          unit_of_measurement: s
+          mode: box
+    debug_notification:
+      name: Debug-Benachrichtigung
+      description: >
+        Aktualisiert eine persistente Benachrichtigung mit aktuellem Preis,
+        billigsten Zeitfenstern, Kurzfristtrend und Schaltgrund.
+      default: false
+      selector:
+        boolean:
+
+mode: single
+max_exceeded: silent
+
+triggers:
+  - trigger: homeassistant
+    event: start
+
+  - trigger: time_pattern
+    minutes: "/5"
+
+  - trigger: state
+    entity_id:
+      - !input consumer_switch
+      - !input power_sensor
+      - !input temperature_sensor
+
+variables:
+  consumer_switch: !input consumer_switch
+  power_sensor: !input power_sensor
+  compressor_running_watts: !input compressor_running_watts
+  temperature_sensor: !input temperature_sensor
+  tibber_home_name: !input tibber_home_name
+  lookahead_hours: !input lookahead_hours
+  cheapest_hours_count: !input cheapest_hours_count
+  near_term_hours: !input near_term_hours
+  near_term_trend_percent: !input near_term_trend_percent
+  near_term_temp_shift: !input near_term_temp_shift
+  cheap_on_temp: !input cheap_on_temp
+  cheap_off_temp: !input cheap_off_temp
+  expensive_on_temp: !input expensive_on_temp
+  expensive_off_temp: !input expensive_off_temp
+  min_on_seconds: !input min_on_seconds
+  min_off_seconds: !input min_off_seconds
+  debug_notification: !input debug_notification
+
+actions:
+  - alias: Preise von Tibber laden
+    continue_on_error: true
+    action: tibber.get_prices
+    data:
+      start: >-
+        {{ now().replace(minute=0, second=0, microsecond=0).strftime('%Y-%m-%d %H:%M:%S') }}
+      end: >-
+        {{ (now().replace(minute=0, second=0, microsecond=0) + timedelta(hours=(lookahead_hours | int(12)))).strftime('%Y-%m-%d %H:%M:%S') }}
+    response_variable: tibber_prices
+
+  - alias: Ausgewaehltes Tibber-Home bestimmen
+    variables:
+      tibber_selected_home: >-
+        {% set prices = tibber_prices.prices if tibber_prices is defined and tibber_prices.prices is defined else {} %}
+        {% set keys = prices.keys() | list %}
+        {% set requested = tibber_home_name | trim %}
+        {% if requested != '' and requested in keys %}
+          {{ requested }}
+        {% elif keys | count > 0 %}
+          {{ keys[0] }}
+        {% else %}
+          {{ '' }}
+        {% endif %}
+
+  - alias: Preisfenster fuer aktuelle Stunde bewerten
+    variables:
+      tibber_price_data_valid: >-
+        {% set prices = tibber_prices.prices if tibber_prices is defined and tibber_prices.prices is defined else {} %}
+        {% set home_prices = prices[tibber_selected_home] if tibber_selected_home in prices else [] %}
+        {% set now_ts = as_timestamp(now()) %}
+        {% set ns = namespace(found=false) %}
+        {% for item in home_prices %}
+          {% set slot_ts = as_timestamp(as_datetime(item.start_time)) %}
+          {% if slot_ts <= now_ts and now_ts < slot_ts + 3600 and is_number(item.price) %}
+            {% set ns.found = true %}
+          {% endif %}
+        {% endfor %}
+        {{ ns.found }}
+      current_slot_is_cheap: >-
+        {% set prices = tibber_prices.prices if tibber_prices is defined and tibber_prices.prices is defined else {} %}
+        {% set home_prices = prices[tibber_selected_home] if tibber_selected_home in prices else [] %}
+        {% set now_ts = as_timestamp(now()) %}
+        {% set ns = namespace(relevant=[], current_start='') %}
+        {% for item in home_prices %}
+          {% set slot_ts = as_timestamp(as_datetime(item.start_time)) %}
+          {% if slot_ts + 3600 > now_ts and is_number(item.price) %}
+            {% set ns.relevant = ns.relevant + [item] %}
+          {% endif %}
+          {% if slot_ts <= now_ts and now_ts < slot_ts + 3600 %}
+            {% set ns.current_start = item.start_time %}
+          {% endif %}
+        {% endfor %}
+        {% set cheapest = (ns.relevant | sort(attribute='price'))[:(cheapest_hours_count | int(3))] %}
+        {{ ns.current_start != '' and (cheapest | selectattr('start_time', 'equalto', ns.current_start) | list | count > 0) }}
+      current_slot_price: >-
+        {% set prices = tibber_prices.prices if tibber_prices is defined and tibber_prices.prices is defined else {} %}
+        {% set home_prices = prices[tibber_selected_home] if tibber_selected_home in prices else [] %}
+        {% set now_ts = as_timestamp(now()) %}
+        {% set ns = namespace(price='unknown') %}
+        {% for item in home_prices %}
+          {% set slot_ts = as_timestamp(as_datetime(item.start_time)) %}
+          {% if slot_ts <= now_ts and now_ts < slot_ts + 3600 and is_number(item.price) %}
+            {% set ns.price = item.price | float %}
+          {% endif %}
+        {% endfor %}
+        {{ (ns.price | float) | round(3) if is_number(ns.price) else 'unknown' }}
+      best_price_next_hours: >-
+        {% set prices = tibber_prices.prices if tibber_prices is defined and tibber_prices.prices is defined else {} %}
+        {% set home_prices = prices[tibber_selected_home] if tibber_selected_home in prices else [] %}
+        {% set now_ts = as_timestamp(now()) %}
+        {% set limit = near_term_hours | int(2) %}
+        {% set ns = namespace(best=none, count=0) %}
+        {% for item in (home_prices | sort(attribute='start_time')) %}
+          {% set slot_ts = as_timestamp(as_datetime(item.start_time)) %}
+          {% if slot_ts > now_ts and is_number(item.price) and ns.count < limit %}
+            {% set price = item.price | float %}
+            {% if ns.best is none or price < ns.best %}
+              {% set ns.best = price %}
+            {% endif %}
+            {% set ns.count = ns.count + 1 %}
+          {% endif %}
+        {% endfor %}
+        {{ (ns.best | float) | round(3) if ns.best is not none else 'unknown' }}
+      best_price_slot_next_hours: >-
+        {% set prices = tibber_prices.prices if tibber_prices is defined and tibber_prices.prices is defined else {} %}
+        {% set home_prices = prices[tibber_selected_home] if tibber_selected_home in prices else [] %}
+        {% set now_ts = as_timestamp(now()) %}
+        {% set limit = near_term_hours | int(2) %}
+        {% set ns = namespace(best=none, slot='unknown', count=0) %}
+        {% for item in (home_prices | sort(attribute='start_time')) %}
+          {% set slot_ts = as_timestamp(as_datetime(item.start_time)) %}
+          {% if slot_ts > now_ts and is_number(item.price) and ns.count < limit %}
+            {% set price = item.price | float %}
+            {% if ns.best is none or price < ns.best %}
+              {% set ns.best = price %}
+              {% set ns.slot = as_datetime(item.start_time).strftime('%d.%m %H:%M') %}
+            {% endif %}
+            {% set ns.count = ns.count + 1 %}
+          {% endif %}
+        {% endfor %}
+        {{ ns.slot }}
+      price_trend: >-
+        {% if is_number(current_slot_price) and is_number(best_price_next_hours) %}
+          {% set current = current_slot_price | float %}
+          {% set future_best = best_price_next_hours | float %}
+          {% set threshold = (near_term_trend_percent | float(12)) / 100 %}
+          {% set denominator = [current | abs, 0.001] | max %}
+          {% set relative_delta = (future_best - current) / denominator %}
+          {% if relative_delta >= threshold %}
+            rising_soon
+          {% elif relative_delta <= (0 - threshold) %}
+            falling_soon
+          {% else %}
+            stable
+          {% endif %}
+        {% else %}
+          unknown
+        {% endif %}
+      cheapest_slots_summary: >-
+        {% set prices = tibber_prices.prices if tibber_prices is defined and tibber_prices.prices is defined else {} %}
+        {% set home_prices = prices[tibber_selected_home] if tibber_selected_home in prices else [] %}
+        {% set now_ts = as_timestamp(now()) %}
+        {% set ns = namespace(relevant=[]) %}
+        {% for item in home_prices %}
+          {% set slot_ts = as_timestamp(as_datetime(item.start_time)) %}
+          {% if slot_ts + 3600 > now_ts and is_number(item.price) %}
+            {% set ns.relevant = ns.relevant + [item] %}
+          {% endif %}
+        {% endfor %}
+        {% set cheapest = (ns.relevant | sort(attribute='price'))[:(cheapest_hours_count | int(3))] %}
+        {% set out = namespace(parts=[]) %}
+        {% for item in cheapest %}
+          {% set out.parts = out.parts + [as_datetime(item.start_time).strftime('%d.%m %H:%M') ~ '=' ~ ((item.price | float) | round(3))] %}
+        {% endfor %}
+        {{ out.parts | join(', ') if out.parts | count > 0 else 'keine Daten' }}
+
+  - alias: Entscheidungslogik berechnen
+    variables:
+      compressor_is_running: >-
+        {{ is_number(states(power_sensor)) and ((states(power_sensor) | float) >= (compressor_running_watts | float)) }}
+      selected_on_temp: >-
+        {% if ((current_slot_is_cheap | string) | lower == 'true') %}
+          {{ cheap_on_temp | float }}
+        {% else %}
+          {{ expensive_on_temp | float }}
+        {% endif %}
+      selected_off_temp: >-
+        {% if ((current_slot_is_cheap | string) | lower == 'true') %}
+          {{ cheap_off_temp | float }}
+        {% else %}
+          {{ expensive_off_temp | float }}
+        {% endif %}
+      effective_on_temp: >-
+        {% set base = selected_on_temp | float %}
+        {% set shift = near_term_temp_shift | float(0) %}
+        {% set trend = (price_trend | string) | lower %}
+        {% if trend == 'rising_soon' %}
+          {{ (base - shift) | round(2) }}
+        {% elif trend == 'falling_soon' %}
+          {{ (base + shift) | round(2) }}
+        {% else %}
+          {{ base | round(2) }}
+        {% endif %}
+      effective_off_temp: >-
+        {% set base = selected_off_temp | float %}
+        {% set shift = near_term_temp_shift | float(0) %}
+        {% set trend = (price_trend | string) | lower %}
+        {% if trend == 'rising_soon' %}
+          {{ (base - shift) | round(2) }}
+        {% elif trend == 'falling_soon' %}
+          {{ (base + shift) | round(2) }}
+        {% else %}
+          {{ base | round(2) }}
+        {% endif %}
+      should_turn_on: >-
+        {% set state_age = as_timestamp(now()) - as_timestamp(states[consumer_switch].last_changed) %}
+        {% set tibber_ok = ((tibber_price_data_valid | string) | lower == 'true') %}
+        {% if not is_state(consumer_switch, 'off') %}
+          false
+        {% elif state_age < (min_off_seconds | float(0)) %}
+          false
+        {% elif not is_number(states(temperature_sensor)) %}
+          true
+        {% elif not tibber_ok %}
+          true
+        {% else %}
+          {{ (states(temperature_sensor) | float) >= (effective_on_temp | float) }}
+        {% endif %}
+      should_turn_off: >-
+        {% set state_age = as_timestamp(now()) - as_timestamp(states[consumer_switch].last_changed) %}
+        {% set tibber_ok = ((tibber_price_data_valid | string) | lower == 'true') %}
+        {% set compressor_running = ((compressor_is_running | string) | lower == 'true') %}
+        {% if not is_state(consumer_switch, 'on') %}
+          false
+        {% elif state_age < (min_on_seconds | float(0)) %}
+          false
+        {% elif not is_number(states(temperature_sensor)) %}
+          false
+        {% elif not is_number(states(power_sensor)) %}
+          false
+        {% elif compressor_running %}
+          false
+        {% elif not tibber_ok %}
+          false
+        {% else %}
+          {{ (states(temperature_sensor) | float) <= (effective_off_temp | float) }}
+        {% endif %}
+      next_action_label: >-
+        {% if ((should_turn_on | string) | lower == 'true') %}
+          turn_on
+        {% elif ((should_turn_off | string) | lower == 'true') %}
+          turn_off
+        {% else %}
+          none
+        {% endif %}
+      decision_reason: >-
+        {% set tibber_ok = ((tibber_price_data_valid | string) | lower == 'true') %}
+        {% set compressor_running = ((compressor_is_running | string) | lower == 'true') %}
+        {% if not is_number(states(temperature_sensor)) %}
+          Fallback: Temperatursensor liefert keinen gueltigen Wert, deshalb bleibt das Relais eingeschaltet.
+        {% elif not tibber_ok %}
+          Fallback: Tibber-Preisdaten fehlen, deshalb bleibt das Relais eingeschaltet.
+        {% elif compressor_running %}
+          Kompressor laeuft mit {{ states(power_sensor) }} W, daher keine Abschaltung. Preis jetzt {{ current_slot_price }}, bester Preis naechste {{ near_term_hours }} h {{ best_price_next_hours }} um {{ best_price_slot_next_hours }}, Trend {{ price_trend }}.
+        {% else %}
+          Preis jetzt {{ current_slot_price }}, bester Preis naechste {{ near_term_hours }} h {{ best_price_next_hours }} um {{ best_price_slot_next_hours }}, Trend {{ price_trend }}. Billige Stunde {{ current_slot_is_cheap }}. Verwendete Schwellen: EIN ab {{ effective_on_temp }} C, AUS bis {{ effective_off_temp }} C. Billigste Slots: {{ cheapest_slots_summary }}.
+        {% endif %}
+      debug_message: >-
+        Aktion: {{ next_action_label }}
+        | Schalter: {{ states(consumer_switch) }}
+        | Temperatur: {{ states(temperature_sensor) }} C
+        | Leistung: {{ states(power_sensor) }} W
+        | Tibber-Preis jetzt: {{ current_slot_price }}
+        | Bester Preis naechste {{ near_term_hours }} h: {{ best_price_next_hours }} um {{ best_price_slot_next_hours }}
+        | Trend: {{ price_trend }}
+        | Billige Stunde: {{ current_slot_is_cheap }}
+        | Basis-Schwellen: EIN {{ selected_on_temp }} C / AUS {{ selected_off_temp }} C
+        | Effektive Schwellen: EIN {{ effective_on_temp }} C / AUS {{ effective_off_temp }} C
+        | Billigste Slots: {{ cheapest_slots_summary }}
+        | Grund: {{ decision_reason }}
+
+  - alias: Dashboard-Status vorbereiten
+    variables:
+      target_switch_state: >-
+        {% if ((should_turn_on | string) | lower == 'true') %}
+          on
+        {% elif ((should_turn_off | string) | lower == 'true') %}
+          off
+        {% else %}
+          {{ states(consumer_switch) }}
+        {% endif %}
+      mode_state: >-
+        {% set tibber_ok = ((tibber_price_data_valid | string) | lower == 'true') %}
+        {% set compressor_running = ((compressor_is_running | string) | lower == 'true') %}
+        {% set cheap_slot = ((current_slot_is_cheap | string) | lower == 'true') %}
+        {% set target = (target_switch_state | string) | lower %}
+        {% if not is_number(states(temperature_sensor)) %}
+          sensor_fallback
+        {% elif not tibber_ok %}
+          price_fallback
+        {% elif compressor_running %}
+          cooling
+        {% elif target == 'on' and cheap_slot %}
+          pre_cooling
+        {% elif target == 'on' %}
+          temperature_guard
+        {% elif cheap_slot %}
+          cheap_window
+        {% else %}
+          idle
+        {% endif %}
+      dashboard_status_json: >-
+        {{ {
+          'mode': mode_state | string | trim,
+          'planned_action': next_action_label | string | trim,
+          'switch_state': states(consumer_switch) | string | trim,
+          'target_switch_state': target_switch_state | string | trim,
+          'temperature_c': states(temperature_sensor) | float(0) | round(2) if is_number(states(temperature_sensor)) else 'unknown',
+          'power_w': states(power_sensor) | float(0) | round(2) if is_number(states(power_sensor)) else 'unknown',
+          'compressor_running': ((compressor_is_running | string) | lower == 'true'),
+          'compressor_running_watts': compressor_running_watts | float(0) | round(1),
+          'price': current_slot_price,
+          'best_price_next_hours': best_price_next_hours,
+          'best_price_slot_next_hours': best_price_slot_next_hours | string | trim,
+          'price_trend': price_trend | string | trim,
+          'cheap_slot': ((current_slot_is_cheap | string) | lower == 'true'),
+          'selected_on_temp': selected_on_temp | float(0) | round(2),
+          'selected_off_temp': selected_off_temp | float(0) | round(2),
+          'effective_on_temp': effective_on_temp | float(0) | round(2),
+          'effective_off_temp': effective_off_temp | float(0) | round(2),
+          'lookahead_hours': lookahead_hours | int(0),
+          'cheapest_hours_count': cheapest_hours_count | int(0),
+          'near_term_hours': near_term_hours | int(0),
+          'near_term_trend_percent': near_term_trend_percent | float(0) | round(1),
+          'cheapest_slots_summary': cheapest_slots_summary | string | trim,
+          'reason': decision_reason | string | trim,
+          'updated': now().strftime('%Y-%m-%d %H:%M:%S')
+        } | to_json }}
+
+  - alias: Dashboard-Status aktualisieren
+    continue_on_error: true
+    action: kuehlgeraet_cockpit.set_dashboard_status
+    data:
+      status_json: "{{ dashboard_status_json }}"
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ ((should_turn_on | string) | lower == 'true') }}"
+        sequence:
+          - action: switch.turn_on
+            target:
+              entity_id: !input consumer_switch
+
+      - conditions:
+          - condition: template
+            value_template: "{{ ((should_turn_off | string) | lower == 'true') }}"
+        sequence:
+          - action: switch.turn_off
+            target:
+              entity_id: !input consumer_switch
+
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ ((debug_notification | string) | lower == 'true') }}"
+        sequence:
+          - action: persistent_notification.create
+            data:
+              title: Kuehlgeraet Tibber Debug
+              notification_id: >-
+                tibber_kuehlgeraet_{{ consumer_switch | replace('.', '_') }}_kurzfristtrend
+              message: >-
+                {{ debug_message }}
+

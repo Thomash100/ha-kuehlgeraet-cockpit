@@ -1,0 +1,8 @@
+{
+  "name": "Kuehlgeraet Cockpit",
+  "content_in_root": false,
+  "domains": ["kuehlgeraet_cockpit"],
+  "country": ["DE"],
+  "homeassistant": "2025.1.0",
+  "render_readme": true
+}

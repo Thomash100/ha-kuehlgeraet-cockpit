@@ -1,0 +1,30 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Kuehlgeraet Cockpit",
+        "description": "Installiert das Kuehlgeraet-Blueprint und exportiert Dashboard-Snippets in deine Home-Assistant-Konfiguration.",
+        "data": {
+          "install_blueprint": "Blueprint installieren",
+          "export_dashboard_snippets": "Dashboard-Snippets exportieren",
+          "overwrite_existing": "Vorhandene Dateien ueberschreiben",
+          "auto_install": "Ressourcen nach dem Setup automatisch exportieren"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Kuehlgeraet Cockpit Optionen",
+        "description": "Waehle aus, welche Dateien automatisch exportiert werden sollen.",
+        "data": {
+          "install_blueprint": "Blueprint installieren",
+          "export_dashboard_snippets": "Dashboard-Snippets exportieren",
+          "overwrite_existing": "Vorhandene Dateien ueberschreiben",
+          "auto_install": "Ressourcen nach dem Setup automatisch exportieren"
+        }
+      }
+    }
+  }
+}
