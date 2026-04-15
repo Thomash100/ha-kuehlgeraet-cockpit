@@ -1,4 +1,4 @@
-"""File export helpers for Kuehlgeraet Cockpit."""
+"""Hilfsfunktionen fuer den Dateiexport von Kuehlgeraet Cockpit."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -16,7 +16,7 @@ EXPORT_FOLDER = DOMAIN
 
 @dataclass(frozen=True)
 class InstallItem:
-    """A single file that can be exported into the Home Assistant config path."""
+    """Beschreibt eine einzelne Datei fuer den Export nach Home Assistant."""
 
     key: str
     source: Path
@@ -36,7 +36,7 @@ def _build_install_plan(
             key="readme",
             source=RESOURCE_ROOT / "README.txt",
             target=config_root / EXPORT_FOLDER / "README.txt",
-            description="Installation notes",
+            description="Installationshinweise",
         )
     ]
 
@@ -58,7 +58,7 @@ def _build_install_plan(
                     / DOMAIN
                     / "kuehlgeraet_tibber_shelly_kurzfristtrend.yaml"
                 ),
-                description="Kuehlgeraet automation blueprint",
+                description="Kuehlgeraet-Automations-Blueprint",
             )
         )
 
@@ -70,7 +70,7 @@ def _build_install_plan(
                     key="dashboard_markdown",
                     source=RESOURCE_ROOT / "dashboards" / "kuehlgeraet_status_sensor.yaml",
                     target=dashboard_root / "kuehlgeraet_status_sensor.yaml",
-                    description="Dashboard markdown card",
+                    description="Dashboard-Statuskarte",
                 ),
                 InstallItem(
                     key="dashboard_cockpit",
@@ -80,13 +80,13 @@ def _build_install_plan(
                         / "kuehlgeraet_cockpit_visual_button_card_sensor.yaml"
                     ),
                     target=dashboard_root / "kuehlgeraet_cockpit_visual_button_card_sensor.yaml",
-                    description="Visual cockpit dashboard card",
+                    description="Visuelle Cockpit-Karte",
                 ),
                 InstallItem(
                     key="dashboard_panel",
                     source=RESOURCE_ROOT / "dashboards" / "kuehlgeraet_technikpanel_sensor.yaml",
                     target=dashboard_root / "kuehlgeraet_technikpanel_sensor.yaml",
-                    description="Technical panel dashboard card",
+                    description="Technikpanel",
                 ),
             ]
         )
@@ -132,7 +132,7 @@ async def async_install_resources(
     export_dashboard_snippets: bool,
     overwrite_existing: bool,
 ) -> list[dict[str, Any]]:
-    """Copy packaged resources into the Home Assistant config directory."""
+    """Kopiert mitgelieferte Ressourcen in das Konfigurationsverzeichnis von Home Assistant."""
     plan = _build_install_plan(
         hass,
         install_blueprint=install_blueprint,

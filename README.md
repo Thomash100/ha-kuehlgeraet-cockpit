@@ -1,65 +1,59 @@
 # Kuehlgeraet Cockpit
 
-Kuehlgeraet Cockpit is a Home Assistant custom integration for Tibber-aware fridge and freezer automation with Shelly switching, compressor-safe logic, and cockpit-style dashboard snippets.
+Kuehlgeraet Cockpit ist eine Home-Assistant-Custom-Integration fuer die strompreisbewusste Steuerung von Kuehlschrank und Kuehltruhe mit Tibber, Shelly-Schaltrelais und Dashboard-Snippets im Cockpit-Stil.
 
-It packages a complete cooling blueprint, exports dashboard views into the correct Home Assistant folders, and exposes a live status sensor that the blueprint updates on every run.
+Die Integration bringt ein komplettes Kuehlgeraete-Blueprint mit, exportiert Dashboard-Dateien in die passenden Home-Assistant-Ordner und stellt den Live-Statussensor `sensor.kuehlgeraet_cockpit_status` bereit, den das Blueprint bei jedem Lauf aktualisiert.
 
-## Features
+## Funktionen
 
-- Tibber-aware cooling automation for Shelly relay + power metering
-- Temperatur-based control with compressor protection
-- Kurzfristtrend logic for the next cheapest hours
-- Live dashboard entity: `sensor.kuehlgeraet_cockpit_status`
-- Markdown and `custom:button-card` dashboard snippets
-- One-click resource export into the Home Assistant config folder
+- Tibber-basierte Kuehlgeraete-Automation fuer Shelly-Relais mit Leistungsmessung
+- Temperaturbasierte Steuerung mit Kompressorschutz
+- Kurzfristtrend-Logik fuer die naechsten guenstigen Stunden
+- Live-Entitaet: `sensor.kuehlgeraet_cockpit_status`
+- Dashboard-Snippets fuer Markdown und `custom:button-card`
+- Ein-Klick-Export in den Home-Assistant-Konfigurationsordner
 
-## Repository note
+## Installation
 
-This project folder is intended to become its own repository. HACS works best when one repository ships one integration domain.
+1. Dieses Repository in HACS als benutzerdefinierte Integration hinzufuegen.
+2. `Kuehlgeraet Cockpit` installieren.
+3. Home Assistant neu starten.
+4. Die Integration `Kuehlgeraet Cockpit` hinzufuegen.
+5. Eine Automation aus dem exportierten Kuehlgeraete-Blueprint erstellen.
+6. Die exportierten Dashboard-Dateien aus `/config/kuehlgeraet_cockpit/dashboard/` in Lovelace einbinden.
 
-## Install
+Die visuellen Cockpit-Karten verwenden `custom:button-card`. Diese Karte sollte ueber HACS installiert sein.
 
-1. Publish this folder as its own GitHub repository, for example `ha-kuehlgeraet-cockpit`.
-2. Add that repository to HACS as a custom integration.
-3. Install `Kuehlgeraet Cockpit`.
-4. Restart Home Assistant.
-5. Add the `Kuehlgeraet Cockpit` integration.
-6. Create an automation from the exported cooling blueprint.
-7. Add the exported dashboard snippets from `/config/kuehlgeraet_cockpit/dashboard/` to Lovelace.
+## Exportierte Dateien
 
-The visual cockpit cards use `custom:button-card`, which should be installed through HACS.
+- das Kuehlgeraete-Blueprint nach `/config/blueprints/automation/kuehlgeraet_cockpit/`
+- Dashboard-Dateien nach `/config/kuehlgeraet_cockpit/dashboard/`
+- Installationshinweise nach `/config/kuehlgeraet_cockpit/README.txt`
 
-## What gets exported
+## Dashboard-Dateien
 
-- the cooling blueprint to `/config/blueprints/automation/kuehlgeraet_cockpit/`
-- dashboard snippets to `/config/kuehlgeraet_cockpit/dashboard/`
-- installation notes to `/config/kuehlgeraet_cockpit/README.txt`
-
-## Dashboard files
-
-| View | File | Purpose |
+| Ansicht | Datei | Zweck |
 | --- | --- | --- |
-| Markdown status | `kuehlgeraet_status_sensor.yaml` | Lightweight overview without custom cards |
-| Visual cockpit | `kuehlgeraet_cockpit_visual_button_card_sensor.yaml` | Frosted single-card cockpit with trend and compressor status |
-| Technical panel | `kuehlgeraet_technikpanel_sensor.yaml` | Multi-panel technical dashboard with pricing and cooling logic |
+| Statuskarte | `kuehlgeraet_status_sensor.yaml` | Schlanke Uebersicht ohne Custom Cards |
+| Visuelles Cockpit | `kuehlgeraet_cockpit_visual_button_card_sensor.yaml` | Kompakte Cockpit-Karte mit Trend- und Kompressorstatus |
+| Technikpanel | `kuehlgeraet_technikpanel_sensor.yaml` | Technisches Dashboard mit Preis- und Kuehllogik |
 
-## Services
+## Dienste
 
 ### `kuehlgeraet_cockpit.install_resources`
 
-Exports the packaged blueprint and dashboard snippets into the Home Assistant config folder.
+Exportiert Blueprint und Dashboard-Dateien in den Home-Assistant-Konfigurationsordner.
 
 ### `kuehlgeraet_cockpit.set_dashboard_status`
 
-Updates the live cockpit sensor from the automation using a compact JSON payload.
+Aktualisiert den Live-Statussensor aus der Automation mit einer kompakten JSON-Nutzlast.
 
-## Files in this project
+## Projektstruktur
 
-- `custom_components/kuehlgeraet_cockpit/` contains the integration code
-- `custom_components/kuehlgeraet_cockpit/resources/` contains the packaged blueprint and dashboard files
+- `custom_components/kuehlgeraet_cockpit/` enthaelt den Integrationscode
+- `custom_components/kuehlgeraet_cockpit/resources/` enthaelt Blueprint und Dashboard-Dateien
 
-## Notes
+## Hinweise
 
-- Update the documentation and issue tracker URLs in `manifest.json` if you publish under a different repository name.
-- The packaged blueprint is based on the Tibber + Shelly kurzfristtrend fridge control created in this workspace.
-
+- Passe die Links in `manifest.json` an, falls du das Projekt unter einem anderen Repository-Namen veroeffentlichst.
+- Das mitgelieferte Blueprint basiert auf der hier entwickelten Tibber-, Shelly- und Kurzfristtrend-Logik fuer Kuehlgeraete.

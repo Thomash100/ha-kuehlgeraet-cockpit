@@ -453,6 +453,26 @@ actions:
         {% else %}
           none
         {% endif %}
+      next_action_label_de: >-
+        {% set action = (next_action_label | string) | trim | lower %}
+        {% if action == 'turn_on' %}
+          Einschalten
+        {% elif action == 'turn_off' %}
+          Ausschalten
+        {% else %}
+          Keine Aktion
+        {% endif %}
+      price_trend_label: >-
+        {% set trend = (price_trend | string) | trim | lower %}
+        {% if trend == 'rising_soon' %}
+          Preis steigt bald
+        {% elif trend == 'falling_soon' %}
+          Guenstigeres Zeitfenster kommt
+        {% elif trend == 'stable' %}
+          Preis stabil
+        {% else %}
+          Trend unbekannt
+        {% endif %}
       decision_reason: >-
         {% set tibber_ok = ((tibber_price_data_valid | string) | lower == 'true') %}
         {% set compressor_running = ((compressor_is_running | string) | lower == 'true') %}
@@ -461,18 +481,18 @@ actions:
         {% elif not tibber_ok %}
           Fallback: Tibber-Preisdaten fehlen, deshalb bleibt das Relais eingeschaltet.
         {% elif compressor_running %}
-          Kompressor laeuft mit {{ states(power_sensor) }} W, daher keine Abschaltung. Preis jetzt {{ current_slot_price }}, bester Preis naechste {{ near_term_hours }} h {{ best_price_next_hours }} um {{ best_price_slot_next_hours }}, Trend {{ price_trend }}.
+          Kompressor laeuft mit {{ states(power_sensor) }} W, daher keine Abschaltung. Preis jetzt {{ current_slot_price }}, bester Preis naechste {{ near_term_hours }} h {{ best_price_next_hours }} um {{ best_price_slot_next_hours }}, Trend {{ price_trend_label }}.
         {% else %}
-          Preis jetzt {{ current_slot_price }}, bester Preis naechste {{ near_term_hours }} h {{ best_price_next_hours }} um {{ best_price_slot_next_hours }}, Trend {{ price_trend }}. Billige Stunde {{ current_slot_is_cheap }}. Verwendete Schwellen: EIN ab {{ effective_on_temp }} C, AUS bis {{ effective_off_temp }} C. Billigste Slots: {{ cheapest_slots_summary }}.
+          Preis jetzt {{ current_slot_price }}, bester Preis naechste {{ near_term_hours }} h {{ best_price_next_hours }} um {{ best_price_slot_next_hours }}, Trend {{ price_trend_label }}. Billige Stunde {{ current_slot_is_cheap }}. Verwendete Schwellen: EIN ab {{ effective_on_temp }} C, AUS bis {{ effective_off_temp }} C. Billigste Slots: {{ cheapest_slots_summary }}.
         {% endif %}
       debug_message: >-
-        Aktion: {{ next_action_label }}
+        Aktion: {{ next_action_label_de }}
         | Schalter: {{ states(consumer_switch) }}
         | Temperatur: {{ states(temperature_sensor) }} C
         | Leistung: {{ states(power_sensor) }} W
         | Tibber-Preis jetzt: {{ current_slot_price }}
         | Bester Preis naechste {{ near_term_hours }} h: {{ best_price_next_hours }} um {{ best_price_slot_next_hours }}
-        | Trend: {{ price_trend }}
+        | Trend: {{ price_trend_label }}
         | Billige Stunde: {{ current_slot_is_cheap }}
         | Basis-Schwellen: EIN {{ selected_on_temp }} C / AUS {{ selected_off_temp }} C
         | Effektive Schwellen: EIN {{ effective_on_temp }} C / AUS {{ effective_off_temp }} C
@@ -488,6 +508,24 @@ actions:
           off
         {% else %}
           {{ states(consumer_switch) }}
+        {% endif %}
+      switch_state_label: >-
+        {% set switch_state = states(consumer_switch) | string | trim | lower %}
+        {% if switch_state == 'on' %}
+          Ein
+        {% elif switch_state == 'off' %}
+          Aus
+        {% else %}
+          {{ states(consumer_switch) }}
+        {% endif %}
+      target_switch_state_label: >-
+        {% set target = target_switch_state | string | trim | lower %}
+        {% if target == 'on' %}
+          Ein
+        {% elif target == 'off' %}
+          Aus
+        {% else %}
+          {{ target_switch_state }}
         {% endif %}
       mode_state: >-
         {% set tibber_ok = ((tibber_price_data_valid | string) | lower == 'true') %}
@@ -509,20 +547,42 @@ actions:
         {% else %}
           idle
         {% endif %}
+      mode_label: >-
+        {% set mode = mode_state | string | trim | lower %}
+        {% if mode == 'sensor_fallback' %}
+          Sensor-Fallback
+        {% elif mode == 'price_fallback' %}
+          Preis-Fallback
+        {% elif mode == 'cooling' %}
+          Kuehlung aktiv
+        {% elif mode == 'pre_cooling' %}
+          Vorkuehlung aktiv
+        {% elif mode == 'temperature_guard' %}
+          Temperaturschutz aktiv
+        {% elif mode == 'cheap_window' %}
+          Billigfenster aktiv
+        {% else %}
+          Bereitschaft
+        {% endif %}
       dashboard_status_json: >-
         {{ {
-          'mode': mode_state | string | trim,
-          'planned_action': next_action_label | string | trim,
+          'mode': mode_label | string | trim,
+          'mode_key': mode_state | string | trim,
+          'planned_action': next_action_label_de | string | trim,
+          'planned_action_key': next_action_label | string | trim,
           'switch_state': states(consumer_switch) | string | trim,
+          'switch_state_label': switch_state_label | string | trim,
           'target_switch_state': target_switch_state | string | trim,
-          'temperature_c': states(temperature_sensor) | float(0) | round(2) if is_number(states(temperature_sensor)) else 'unknown',
-          'power_w': states(power_sensor) | float(0) | round(2) if is_number(states(power_sensor)) else 'unknown',
+          'target_switch_state_label': target_switch_state_label | string | trim,
+          'temperature_c': states(temperature_sensor) | float(0) | round(2) if is_number(states(temperature_sensor)) else 'unbekannt',
+          'power_w': states(power_sensor) | float(0) | round(2) if is_number(states(power_sensor)) else 'unbekannt',
           'compressor_running': ((compressor_is_running | string) | lower == 'true'),
           'compressor_running_watts': compressor_running_watts | float(0) | round(1),
           'price': current_slot_price,
           'best_price_next_hours': best_price_next_hours,
           'best_price_slot_next_hours': best_price_slot_next_hours | string | trim,
           'price_trend': price_trend | string | trim,
+          'price_trend_label': price_trend_label | string | trim,
           'cheap_slot': ((current_slot_is_cheap | string) | lower == 'true'),
           'selected_on_temp': selected_on_temp | float(0) | round(2),
           'selected_off_temp': selected_off_temp | float(0) | round(2),

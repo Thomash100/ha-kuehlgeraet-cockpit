@@ -1,4 +1,4 @@
-"""Config flow for Kuehlgeraet Cockpit."""
+"""Konfigurationsdialog fuer Kuehlgeraet Cockpit."""
 from __future__ import annotations
 
 import voluptuous as vol
@@ -46,7 +46,7 @@ def _build_schema(defaults: dict[str, bool]) -> vol.Schema:
 
 
 class KuehlgeraetCockpitConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Handle a config flow for Kuehlgeraet Cockpit."""
+    """Verwaltet den Konfigurationsdialog fuer Kuehlgeraet Cockpit."""
 
     VERSION = 1
 
@@ -56,7 +56,7 @@ class KuehlgeraetCockpitConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return KuehlgeraetCockpitOptionsFlow(config_entry)
 
     async def async_step_user(self, user_input: dict[str, bool] | None = None):
-        """Handle the initial config step."""
+        """Bearbeitet den ersten Konfigurationsschritt."""
         if user_input is not None:
             return self.async_create_entry(title="Kuehlgeraet Cockpit", data=user_input)
 
@@ -64,13 +64,13 @@ class KuehlgeraetCockpitConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 
 class KuehlgeraetCockpitOptionsFlow(config_entries.OptionsFlow):
-    """Handle Kuehlgeraet Cockpit options."""
+    """Verwaltet die Optionen von Kuehlgeraet Cockpit."""
 
     def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
         self.config_entry = config_entry
 
     async def async_step_init(self, user_input: dict[str, bool] | None = None):
-        """Manage the integration options."""
+        """Bearbeitet die Integrationsoptionen."""
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
 

@@ -1,20 +1,19 @@
 # Kuehlgeraet Cockpit
 
-Kuehlgeraet Cockpit is a HACS-installable Home Assistant custom integration for Tibber-aware fridge and freezer control with Shelly switching, power-based compressor protection, and ready-to-use dashboard snippets.
+Kuehlgeraet Cockpit ist eine ueber HACS installierbare Home-Assistant-Custom-Integration fuer die strompreisbewusste Steuerung von Kuehlschrank und Kuehltruhe mit Tibber, Shelly-Schaltung, leistungsbasierter Kompressorerkennung und sofort nutzbaren Dashboard-Snippets.
 
-What it includes:
-- a Tibber + Shelly cooling blueprint with kurzfristiger price trend logic
-- a live entity: `sensor.kuehlgeraet_cockpit_status`
-- exported dashboard snippets for markdown, visual cockpit, and technical panel views
-- services to export packaged resources and update the dashboard status from the automation
+Enthalten sind:
+- ein Kuehlgeraete-Blueprint fuer Tibber und Shelly mit Kurzfristtrend-Logik
+- eine Live-Entitaet: `sensor.kuehlgeraet_cockpit_status`
+- exportierbare Dashboard-Dateien fuer Statuskarte, visuelles Cockpit und Technikpanel
+- Dienste zum Export der mitgelieferten Ressourcen und zur Aktualisierung des Dashboard-Status aus der Automation
 
-Install flow:
-1. Publish this folder as its own GitHub repository.
-2. Add that repository to HACS as a custom integration.
-3. Install `Kuehlgeraet Cockpit`.
-4. Add the integration in Home Assistant.
-5. Let it export the blueprint and dashboard snippets.
-6. Create an automation from the exported cooling blueprint.
-7. Add the exported dashboard YAML snippets from `/config/kuehlgeraet_cockpit/dashboard/` to Lovelace.
+Installationsablauf:
+1. Dieses Repository in HACS als benutzerdefinierte Integration hinzufuegen.
+2. `Kuehlgeraet Cockpit` installieren.
+3. Die Integration in Home Assistant hinzufuegen.
+4. Blueprint und Dashboard-Dateien exportieren lassen.
+5. Eine Automation aus dem exportierten Kuehlgeraete-Blueprint erstellen.
+6. Die exportierten YAML-Dateien aus `/config/kuehlgeraet_cockpit/dashboard/` in Lovelace einbinden.
 
-The visual cards require `custom:button-card` from HACS.
+Die visuellen Cockpit-Karten benoetigen `custom:button-card` aus HACS.

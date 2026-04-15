@@ -6,13 +6,13 @@ content: >-
 
   **Modus:** {{ states(entity) }}
   **Geplante Aktion:** {{ state_attr(entity, 'planned_action') | default('-') }}
-  **Schalter / Ziel:** {{ state_attr(entity, 'switch_state') | default('-') }} / {{ state_attr(entity, 'target_switch_state') | default('-') }}
+  **Schalter / Ziel:** {{ state_attr(entity, 'switch_state_label') | default(state_attr(entity, 'switch_state') | default('-')) }} / {{ state_attr(entity, 'target_switch_state_label') | default(state_attr(entity, 'target_switch_state') | default('-')) }}
   **Temperatur / Leistung:** {{ state_attr(entity, 'temperature_c') | default('-') }} C / {{ state_attr(entity, 'power_w') | default('-') }} W
   **Kompressor aktiv:** {{ 'Ja' if compressor in [true, 'true', 'True'] else 'Nein' }}
 
   **Tibber aktuell:** {{ state_attr(entity, 'price') | default('-') }}
   **Bester Preis naechste {{ state_attr(entity, 'near_term_hours') | default('-') }} h:** {{ state_attr(entity, 'best_price_next_hours') | default('-') }} um {{ state_attr(entity, 'best_price_slot_next_hours') | default('-') }}
-  **Trend:** {{ state_attr(entity, 'price_trend') | default('-') }}
+  **Trend:** {{ state_attr(entity, 'price_trend_label') | default('-') }}
   **Billigfenster aktiv:** {{ 'Ja' if state_attr(entity, 'cheap_slot') in [true, 'true', 'True'] else 'Nein' }}
   **Billigste Slots:** {{ state_attr(entity, 'cheapest_slots_summary') | default('-') }}
 

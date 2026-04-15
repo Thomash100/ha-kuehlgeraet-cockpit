@@ -1,4 +1,4 @@
-"""Sensor platform for Kuehlgeraet Cockpit."""
+"""Sensorplattform fuer Kuehlgeraet Cockpit."""
 from __future__ import annotations
 
 from typing import Any
@@ -17,13 +17,13 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up the status sensor from a config entry."""
+    """Richtet den Statussensor fuer einen Konfigurationseintrag ein."""
     runtime = await async_get_runtime(hass)
     async_add_entities([KuehlgeraetCockpitStatusSensor(runtime)], True)
 
 
 class KuehlgeraetCockpitStatusSensor(SensorEntity):
-    """Expose the latest cooling automation status as a sensor."""
+    """Stellt den letzten Status der Kuehlgeraete-Automation als Sensor bereit."""
 
     _attr_name = STATUS_SENSOR_NAME
     _attr_unique_id = STATUS_SENSOR_UNIQUE_ID
@@ -35,19 +35,19 @@ class KuehlgeraetCockpitStatusSensor(SensorEntity):
 
     @property
     def native_value(self) -> str:
-        """Return the primary sensor state."""
-        return str(self._runtime.status.get("mode") or "idle")
+        """Gibt den primaeren Sensorzustand zurueck."""
+        return str(self._runtime.status.get("mode") or "Bereitschaft")
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        """Return the latest payload as sensor attributes."""
+        """Gibt die letzte Status-Nutzlast als Attribute zurueck."""
         return dict(self._runtime.status)
 
     async def async_added_to_hass(self) -> None:
-        """Subscribe to runtime updates."""
+        """Abonniert Statusaktualisierungen zur Laufzeit."""
         self.async_on_remove(self._runtime.async_listen(self._handle_status_updated))
 
     @callback
     def _handle_status_updated(self) -> None:
-        """Write the latest state to Home Assistant."""
+        """Schreibt den neuesten Zustand in Home Assistant."""
         self.async_write_ha_state()

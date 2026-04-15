@@ -1,4 +1,4 @@
-"""Runtime setup logic for Kuehlgeraet Cockpit."""
+"""Laufzeit-Setup fuer Kuehlgeraet Cockpit."""
 from __future__ import annotations
 
 import json
@@ -42,18 +42,18 @@ def _resolve_entry(hass: HomeAssistant, entry_id: str | None) -> ConfigEntry:
     entries = hass.config_entries.async_entries(DOMAIN)
 
     if not entries:
-        raise HomeAssistantError("Kuehlgeraet Cockpit is not configured yet.")
+        raise HomeAssistantError("Kuehlgeraet Cockpit ist noch nicht eingerichtet.")
 
     if entry_id is None:
         if len(entries) == 1:
             return entries[0]
-        raise HomeAssistantError("Please provide config_entry_id when multiple entries exist.")
+        raise HomeAssistantError("Bitte config_entry_id angeben, wenn mehrere Eintraege vorhanden sind.")
 
     for entry in entries:
         if entry.entry_id == entry_id:
             return entry
 
-    raise HomeAssistantError(f"Unknown config_entry_id: {entry_id}")
+    raise HomeAssistantError(f"Unbekannte config_entry_id: {entry_id}")
 
 
 async def _async_notify_installation(
@@ -70,32 +70,32 @@ async def _async_notify_installation(
         return
 
     lines = [
-        "Kuehlgeraet Cockpit has exported the selected resources.",
+        "Kuehlgeraet Cockpit hat die ausgewaehlten Ressourcen exportiert.",
         "",
     ]
 
     if created:
-        lines.append("Created:")
+        lines.append("Neu erstellt:")
         lines.extend([f"- {item['description']}: {item['target']}" for item in created])
         lines.append("")
 
     if updated:
-        lines.append("Updated:")
+        lines.append("Aktualisiert:")
         lines.extend([f"- {item['description']}: {item['target']}" for item in updated])
         lines.append("")
 
     if skipped:
-        lines.append("Skipped:")
+        lines.append("Uebersprungen:")
         lines.extend([f"- {item['description']}: {item['target']}" for item in skipped])
         lines.append("")
 
     lines.extend(
         [
-            "Next steps:",
-            "- Reload blueprints if the automation blueprint was exported.",
-            "- Add the exported dashboard YAML snippets from /config/kuehlgeraet_cockpit/dashboard/ to Lovelace.",
-            "- Install custom:button-card through HACS if you want the visual cards.",
-            "- The live status entity is sensor.kuehlgeraet_cockpit_status.",
+            "Naechste Schritte:",
+            "- Blueprints neu laden, wenn das Automations-Blueprint exportiert wurde.",
+            "- Die exportierten Dashboard-YAML-Dateien aus /config/kuehlgeraet_cockpit/dashboard/ in Lovelace einbinden.",
+            "- custom:button-card ueber HACS installieren, wenn du die visuellen Karten nutzen willst.",
+            "- Die Live-Statusentitaet heisst sensor.kuehlgeraet_cockpit_status.",
         ]
     )
 
@@ -108,7 +108,7 @@ async def _async_notify_installation(
 
 
 async def async_setup_integration(hass: HomeAssistant, config: dict[str, Any]) -> bool:
-    """Set up services for Kuehlgeraet Cockpit."""
+    """Richtet die Dienste fuer Kuehlgeraet Cockpit ein."""
     from .installer import async_install_resources
     from .runtime import async_get_runtime
 
@@ -163,10 +163,10 @@ async def async_setup_integration(hass: HomeAssistant, config: dict[str, Any]) -
         try:
             payload = json.loads(call.data[CONF_STATUS_JSON])
         except json.JSONDecodeError as err:
-            raise HomeAssistantError("status_json must contain valid JSON.") from err
+            raise HomeAssistantError("status_json muss gueltiges JSON enthalten.") from err
 
         if not isinstance(payload, dict):
-            raise HomeAssistantError("status_json must decode to a JSON object.")
+            raise HomeAssistantError("status_json muss zu einem JSON-Objekt dekodieren.")
 
         await runtime.async_set_status(payload)
 
@@ -187,7 +187,7 @@ async def async_setup_integration(hass: HomeAssistant, config: dict[str, Any]) -
 
 
 async def async_setup_entry_integration(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up Kuehlgeraet Cockpit from a config entry."""
+    """Richtet Kuehlgeraet Cockpit ueber einen Konfigurationseintrag ein."""
     from .installer import async_install_resources
     from .runtime import async_get_runtime
 
@@ -209,11 +209,11 @@ async def async_setup_entry_integration(hass: HomeAssistant, entry: ConfigEntry)
             ),
         )
         await _async_notify_installation(hass, results, automatic=True)
-        _LOGGER.debug("Automatic resource export finished: %s", results)
+        _LOGGER.debug("Automatischer Ressourcenexport abgeschlossen: %s", results)
 
     return True
 
 
 async def async_unload_entry_integration(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Unload Kuehlgeraet Cockpit."""
+    """Entlaedt Kuehlgeraet Cockpit."""
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)

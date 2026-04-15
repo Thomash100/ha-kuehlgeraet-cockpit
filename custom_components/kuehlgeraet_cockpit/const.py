@@ -1,4 +1,4 @@
-"""Constants for the Kuehlgeraet Cockpit integration."""
+"""Konstanten fuer die Integration Kuehlgeraet Cockpit."""
 
 DOMAIN = "kuehlgeraet_cockpit"
 
@@ -27,4 +27,4 @@ STORAGE_VERSION = 1
 STORAGE_KEY = f"{DOMAIN}_status"
 
 STATUS_SENSOR_UNIQUE_ID = f"{DOMAIN}_status"
-STATUS_SENSOR_NAME = "Kuehlgeraet Cockpit Status"
+STATUS_SENSOR_NAME = "Kuehlgeraet Cockpit-Status"

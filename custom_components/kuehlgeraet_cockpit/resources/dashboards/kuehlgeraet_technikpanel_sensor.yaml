@@ -34,7 +34,7 @@ cards:
             <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;color:#eef8ff;font-family:Consolas, 'Courier New', monospace;">
               <div>
                 <div style="font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:rgba(220,245,255,0.72);">Kuehlgeraet Technikpanel</div>
-                <div style="margin-top:6px;font-size:30px;font-weight:800;letter-spacing:0.04em;color:${accent};">${String(safe(data.mode, entity?.state || 'idle')).toUpperCase()}</div>
+                <div style="margin-top:6px;font-size:30px;font-weight:800;letter-spacing:0.04em;color:${accent};">${String(safe(data.mode, entity?.state || 'Bereitschaft')).toUpperCase()}</div>
                 <div style="margin-top:8px;font-size:13px;color:rgba(235,248,255,0.84);">Letztes Update: ${safe(data.updated)}</div>
               </div>
               <div style="display:grid;grid-template-columns:repeat(3, minmax(88px, 1fr));gap:10px;min-width:min(100%, 360px);">
@@ -81,7 +81,6 @@ cards:
             [[[ 
               const data = entity?.attributes || {};
               const safe = (v, fallback='-') => (v === undefined || v === null || v === '') ? fallback : v;
-              const trend = String(safe(data.price_trend, 'unknown')).toLowerCase();
               const cheap = data.cheap_slot === true || String(data.cheap_slot).toLowerCase() === 'true';
               return `
                 <div style="font-family:Consolas, 'Courier New', monospace;color:#eef8ff;">
@@ -101,7 +100,7 @@ cards:
                   </div>
                   <div style="margin-top:12px;font-size:13px;display:flex;justify-content:space-between;"><span style="opacity:0.7;">Bester Preis</span><span style="font-weight:700;">${safe(data.best_price_next_hours)}</span></div>
                   <div style="margin-top:6px;font-size:13px;display:flex;justify-content:space-between;"><span style="opacity:0.7;">Uhrzeit</span><span style="font-weight:700;">${safe(data.best_price_slot_next_hours)}</span></div>
-                  <div style="margin-top:6px;font-size:13px;display:flex;justify-content:space-between;"><span style="opacity:0.7;">Trend</span><span style="font-weight:700;">${safe(data.price_trend)}</span></div>
+                  <div style="margin-top:6px;font-size:13px;display:flex;justify-content:space-between;"><span style="opacity:0.7;">Trend</span><span style="font-weight:700;">${safe(data.price_trend_label, data.price_trend)}</span></div>
                   <div style="margin-top:12px;padding:10px;border-radius:14px;background:rgba(255,255,255,0.06);font-size:12px;line-height:1.5;">
                     <div style="font-size:10px;opacity:0.68;text-transform:uppercase;">Billigste Slots</div>
                     <div style="margin-top:6px;">${safe(data.cheapest_slots_summary)}</div>
@@ -145,7 +144,7 @@ cards:
                   </div>
                   <div style="margin-top:12px;font-size:13px;display:flex;justify-content:space-between;"><span style="opacity:0.7;">Leistung</span><span style="font-weight:700;">${safe(data.power_w)} W</span></div>
                   <div style="margin-top:6px;font-size:13px;display:flex;justify-content:space-between;"><span style="opacity:0.7;">Schwellwert</span><span style="font-weight:700;">${safe(data.compressor_running_watts)} W</span></div>
-                  <div style="margin-top:6px;font-size:13px;display:flex;justify-content:space-between;"><span style="opacity:0.7;">Relais</span><span style="font-weight:700;">${safe(data.switch_state)} -> ${safe(data.target_switch_state)}</span></div>
+                  <div style="margin-top:6px;font-size:13px;display:flex;justify-content:space-between;"><span style="opacity:0.7;">Relais</span><span style="font-weight:700;">${safe(data.switch_state_label, data.switch_state)} -> ${safe(data.target_switch_state_label, data.target_switch_state)}</span></div>
                   <div style="margin-top:6px;font-size:13px;display:flex;justify-content:space-between;"><span style="opacity:0.7;">Aktion</span><span style="font-weight:700;">${safe(data.planned_action)}</span></div>
                 </div>`;
             ]]]
@@ -228,7 +227,7 @@ cards:
                     <div style="font-size:10px;opacity:0.68;text-transform:uppercase;">Grund</div>
                     <div style="margin-top:6px;font-size:13px;line-height:1.55;">${safe(data.reason)}</div>
                   </div>
-                  <div style="margin-top:12px;font-size:13px;display:flex;justify-content:space-between;"><span style="opacity:0.7;">Lookahead</span><span style="font-weight:700;">${safe(data.lookahead_hours)} h</span></div>
+                  <div style="margin-top:12px;font-size:13px;display:flex;justify-content:space-between;"><span style="opacity:0.7;">Vorausschau</span><span style="font-weight:700;">${safe(data.lookahead_hours)} h</span></div>
                   <div style="margin-top:6px;font-size:13px;display:flex;justify-content:space-between;"><span style="opacity:0.7;">Billigste Stunden</span><span style="font-weight:700;">${safe(data.cheapest_hours_count)}</span></div>
                   <div style="margin-top:6px;font-size:13px;display:flex;justify-content:space-between;"><span style="opacity:0.7;">Kurzfristfenster</span><span style="font-weight:700;">${safe(data.near_term_hours)} h</span></div>
                   <div style="margin-top:6px;font-size:13px;display:flex;justify-content:space-between;"><span style="opacity:0.7;">Update</span><span style="font-weight:700;">${safe(data.updated)}</span></div>
