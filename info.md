@@ -1,19 +1,15 @@
 # Kuehlgeraet Cockpit
 
-Kuehlgeraet Cockpit ist eine ueber HACS installierbare Home-Assistant-Custom-Integration fuer die strompreisbewusste Steuerung von Kuehlschrank und Kuehltruhe mit Tibber, Shelly-Schaltung, leistungsbasierter Kompressorerkennung und sofort nutzbaren Dashboard-Snippets.
+Kuehlgeraet Cockpit ist eine HACS-installierbare Home-Assistant-Custom-Integration mit offener Regel-Engine und Web-Cockpit.
 
 Enthalten sind:
-- ein Kuehlgeraete-Blueprint fuer Tibber und Shelly mit Kurzfristtrend-Logik
-- eine Live-Entitaet: `sensor.kuehlgeraet_cockpit_status`
-- exportierbare Dashboard-Dateien fuer Statuskarte, visuelles Cockpit und Technikpanel
-- Dienste zum Export der mitgelieferten Ressourcen und zur Aktualisierung des Dashboard-Status aus der Automation
+- eine reine Python-Regel-Engine fuer Temperatur, Leistung und Strompreis
+- ein Home-Assistant-Sidebar-Panel unter `/kuehlgeraet-cockpit`
+- Sensoren fuer Status, Preisfaktor, Schwellen und Messwerte
+- Binary-Sensoren fuer Preisfenster, Kompressorstatus und Preisdaten
+- Switches fuer Regel-Engine und Simulation
+- Number-Entitaeten fuer Live-Anpassung der Regelgrenzen
 
-Installationsablauf:
-1. Dieses Repository in HACS als benutzerdefinierte Integration hinzufuegen.
-2. `Kuehlgeraet Cockpit` installieren.
-3. Die Integration in Home Assistant hinzufuegen.
-4. Blueprint und Dashboard-Dateien exportieren lassen.
-5. Eine Automation aus dem exportierten Kuehlgeraete-Blueprint erstellen.
-6. Die exportierten YAML-Dateien aus `/config/kuehlgeraet_cockpit/dashboard/` in Lovelace einbinden.
+Die Integration ist nicht auf Shelly begrenzt. Das Ziel kann jede Home-Assistant-Entitaet sein, die `homeassistant.turn_on` und `homeassistant.turn_off` unterstuetzt. Strompreise koennen ueber Preis-Min/Max-Entitaeten, Preisattribute oder eine beliebige Guenstig-Entitaet einfliessen.
 
-Die visuellen Cockpit-Karten benoetigen `custom:button-card` aus HACS.
+Die fruehere Blueprint-Variante ist nicht mehr der aktive Steuerpfad.

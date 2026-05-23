@@ -1,41 +1,32 @@
-"""Laufzeit-Setup fuer Kuehlgeraet Cockpit."""
+"""Runtime setup for Kuehlgeraet Cockpit."""
+
 from __future__ import annotations
 
-import json
-import logging
 from typing import Any
 
 import voluptuous as vol
 
-from homeassistant.components import persistent_notification
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import config_validation as cv
 
 from .const import (
-    CONF_AUTO_INSTALL,
+    CONF_APPLY,
     CONF_CONFIG_ENTRY_ID,
-    CONF_EXPORT_DASHBOARD_SNIPPETS,
-    CONF_INSTALL_BLUEPRINT,
-    CONF_OVERWRITE_EXISTING,
-    CONF_STATUS_JSON,
+    CONF_ENABLED,
+    CONF_SETTING,
+    CONF_VALUE,
+    DATA_PANEL_REGISTERED,
     DATA_SERVICES_REGISTERED,
-    DEFAULT_AUTO_INSTALL,
-    DEFAULT_EXPORT_DASHBOARD_SNIPPETS,
-    DEFAULT_INSTALL_BLUEPRINT,
-    DEFAULT_OVERWRITE_EXISTING,
     DOMAIN,
     PLATFORMS,
-    SERVICE_INSTALL_RESOURCES,
-    SERVICE_SET_DASHBOARD_STATUS,
+    RUNTIME_SETTING_KEYS,
+    SERVICE_EVALUATE_NOW,
+    SERVICE_SET_ENABLED,
+    SERVICE_SET_SETTING,
+    SERVICE_SET_SIMULATION,
 )
-
-_LOGGER = logging.getLogger(__name__)
-
-
-def _merged_entry_settings(entry: ConfigEntry) -> dict[str, Any]:
-    return {**entry.data, **entry.options}
 
 
 def _resolve_entry(hass: HomeAssistant, entry_id: str | None) -> ConfigEntry:
@@ -47,7 +38,9 @@ def _resolve_entry(hass: HomeAssistant, entry_id: str | None) -> ConfigEntry:
     if entry_id is None:
         if len(entries) == 1:
             return entries[0]
-        raise HomeAssistantError("Bitte config_entry_id angeben, wenn mehrere Eintraege vorhanden sind.")
+        raise HomeAssistantError(
+            "Bitte config_entry_id angeben, wenn mehrere Eintraege vorhanden sind."
+        )
 
     for entry in entries:
         if entry.entry_id == entry_id:
@@ -56,164 +49,122 @@ def _resolve_entry(hass: HomeAssistant, entry_id: str | None) -> ConfigEntry:
     raise HomeAssistantError(f"Unbekannte config_entry_id: {entry_id}")
 
 
-async def _async_notify_installation(
+async def _async_update_listener(
     hass: HomeAssistant,
-    results: list[dict[str, Any]],
-    *,
-    automatic: bool,
+    entry: ConfigEntry,
 ) -> None:
-    created = [item for item in results if item["status"] == "created"]
-    updated = [item for item in results if item["status"] == "updated"]
-    skipped = [item for item in results if item["status"] == "skipped"]
-
-    if automatic and not created and not updated:
-        return
-
-    lines = [
-        "Kuehlgeraet Cockpit hat die ausgewaehlten Ressourcen exportiert.",
-        "",
-    ]
-
-    if created:
-        lines.append("Neu erstellt:")
-        lines.extend([f"- {item['description']}: {item['target']}" for item in created])
-        lines.append("")
-
-    if updated:
-        lines.append("Aktualisiert:")
-        lines.extend([f"- {item['description']}: {item['target']}" for item in updated])
-        lines.append("")
-
-    if skipped:
-        lines.append("Uebersprungen:")
-        lines.extend([f"- {item['description']}: {item['target']}" for item in skipped])
-        lines.append("")
-
-    lines.extend(
-        [
-            "Naechste Schritte:",
-            "- Blueprints neu laden, wenn das Automations-Blueprint exportiert wurde.",
-            "- Die exportierten Dashboard-YAML-Dateien aus /config/kuehlgeraet_cockpit/dashboard/ in Lovelace einbinden.",
-            "- custom:button-card ueber HACS installieren, wenn du die visuellen Karten nutzen willst.",
-            "- Die Live-Statusentitaet heisst sensor.kuehlgeraet_cockpit_status.",
-        ]
-    )
-
-    persistent_notification.async_create(
-        hass,
-        "\n".join(lines),
-        title="Kuehlgeraet Cockpit Installation",
-        notification_id="kuehlgeraet_cockpit_installation",
-    )
+    """Reload when options change."""
+    await hass.config_entries.async_reload(entry.entry_id)
 
 
-async def async_setup_integration(hass: HomeAssistant, config: dict[str, Any]) -> bool:
-    """Richtet die Dienste fuer Kuehlgeraet Cockpit ein."""
-    from .installer import async_install_resources
+async def async_setup_integration(
+    hass: HomeAssistant,
+    config: dict[str, Any],  # noqa: ARG001
+) -> bool:
+    """Set up services and frontend panel."""
+    from .frontend import async_register_frontend
     from .runtime import async_get_runtime
 
-    install_resources_schema = vol.Schema(
-        {
-            vol.Optional(CONF_CONFIG_ENTRY_ID): cv.string,
-            vol.Optional(CONF_INSTALL_BLUEPRINT): cv.boolean,
-            vol.Optional(CONF_EXPORT_DASHBOARD_SNIPPETS): cv.boolean,
-            vol.Optional(CONF_OVERWRITE_EXISTING): cv.boolean,
-        }
-    )
-    set_dashboard_status_schema = vol.Schema(
-        {
-            vol.Required(CONF_STATUS_JSON): cv.string,
-        }
-    )
-
-    await async_get_runtime(hass)
+    runtime = await async_get_runtime(hass)
     domain_data = hass.data.setdefault(DOMAIN, {})
+
+    if not domain_data.get(DATA_PANEL_REGISTERED):
+        await async_register_frontend(hass)
+        domain_data[DATA_PANEL_REGISTERED] = True
 
     if domain_data.get(DATA_SERVICES_REGISTERED):
         return True
 
-    async def async_handle_install_resources(call: ServiceCall) -> None:
-        entry = _resolve_entry(hass, call.data.get(CONF_CONFIG_ENTRY_ID))
-        settings = _merged_entry_settings(entry)
+    evaluate_now_schema = vol.Schema(
+        {
+            vol.Optional(CONF_CONFIG_ENTRY_ID): cv.string,
+            vol.Optional(CONF_APPLY, default=False): cv.boolean,
+        }
+    )
+    enabled_schema = vol.Schema(
+        {
+            vol.Optional(CONF_CONFIG_ENTRY_ID): cv.string,
+            vol.Required(CONF_ENABLED): cv.boolean,
+        }
+    )
+    setting_schema = vol.Schema(
+        {
+            vol.Optional(CONF_CONFIG_ENTRY_ID): cv.string,
+            vol.Required(CONF_SETTING): vol.In(sorted(RUNTIME_SETTING_KEYS)),
+            vol.Required(CONF_VALUE): vol.Any(vol.Coerce(float), cv.string),
+        }
+    )
 
-        results = await async_install_resources(
-            hass,
-            install_blueprint=call.data.get(
-                CONF_INSTALL_BLUEPRINT,
-                settings.get(CONF_INSTALL_BLUEPRINT, DEFAULT_INSTALL_BLUEPRINT),
-            ),
-            export_dashboard_snippets=call.data.get(
-                CONF_EXPORT_DASHBOARD_SNIPPETS,
-                settings.get(
-                    CONF_EXPORT_DASHBOARD_SNIPPETS,
-                    DEFAULT_EXPORT_DASHBOARD_SNIPPETS,
-                ),
-            ),
-            overwrite_existing=call.data.get(
-                CONF_OVERWRITE_EXISTING,
-                settings.get(CONF_OVERWRITE_EXISTING, DEFAULT_OVERWRITE_EXISTING),
-            ),
+    async def async_handle_evaluate_now(call: ServiceCall) -> None:
+        _resolve_entry(hass, call.data.get(CONF_CONFIG_ENTRY_ID))
+        await runtime.async_evaluate(
+            apply_decision=call.data[CONF_APPLY],
+            reason="service",
         )
 
-        await _async_notify_installation(hass, results, automatic=False)
+    async def async_handle_set_enabled(call: ServiceCall) -> None:
+        _resolve_entry(hass, call.data.get(CONF_CONFIG_ENTRY_ID))
+        await runtime.async_set_enabled(call.data[CONF_ENABLED])
 
-    async def async_handle_set_dashboard_status(call: ServiceCall) -> None:
-        runtime = await async_get_runtime(hass)
+    async def async_handle_set_simulation(call: ServiceCall) -> None:
+        _resolve_entry(hass, call.data.get(CONF_CONFIG_ENTRY_ID))
+        await runtime.async_set_simulation(call.data[CONF_ENABLED])
 
-        try:
-            payload = json.loads(call.data[CONF_STATUS_JSON])
-        except json.JSONDecodeError as err:
-            raise HomeAssistantError("status_json muss gueltiges JSON enthalten.") from err
-
-        if not isinstance(payload, dict):
-            raise HomeAssistantError("status_json muss zu einem JSON-Objekt dekodieren.")
-
-        await runtime.async_set_status(payload)
+    async def async_handle_set_setting(call: ServiceCall) -> None:
+        _resolve_entry(hass, call.data.get(CONF_CONFIG_ENTRY_ID))
+        await runtime.async_set_setting(call.data[CONF_SETTING], call.data[CONF_VALUE])
 
     hass.services.async_register(
         DOMAIN,
-        SERVICE_INSTALL_RESOURCES,
-        async_handle_install_resources,
-        schema=install_resources_schema,
+        SERVICE_EVALUATE_NOW,
+        async_handle_evaluate_now,
+        schema=evaluate_now_schema,
     )
     hass.services.async_register(
         DOMAIN,
-        SERVICE_SET_DASHBOARD_STATUS,
-        async_handle_set_dashboard_status,
-        schema=set_dashboard_status_schema,
+        SERVICE_SET_ENABLED,
+        async_handle_set_enabled,
+        schema=enabled_schema,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_SET_SIMULATION,
+        async_handle_set_simulation,
+        schema=enabled_schema,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_SET_SETTING,
+        async_handle_set_setting,
+        schema=setting_schema,
     )
     domain_data[DATA_SERVICES_REGISTERED] = True
     return True
 
 
-async def async_setup_entry_integration(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Richtet Kuehlgeraet Cockpit ueber einen Konfigurationseintrag ein."""
-    from .installer import async_install_resources
+async def async_setup_entry_integration(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+) -> bool:
+    """Set up Kuehlgeraet Cockpit from a config entry."""
     from .runtime import async_get_runtime
 
-    await async_get_runtime(hass)
+    runtime = await async_get_runtime(hass)
+    await runtime.async_setup_entry(entry)
+    entry.async_on_unload(entry.add_update_listener(_async_update_listener))
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-
-    settings = _merged_entry_settings(entry)
-    if settings.get(CONF_AUTO_INSTALL, DEFAULT_AUTO_INSTALL):
-        results = await async_install_resources(
-            hass,
-            install_blueprint=settings.get(CONF_INSTALL_BLUEPRINT, DEFAULT_INSTALL_BLUEPRINT),
-            export_dashboard_snippets=settings.get(
-                CONF_EXPORT_DASHBOARD_SNIPPETS,
-                DEFAULT_EXPORT_DASHBOARD_SNIPPETS,
-            ),
-            overwrite_existing=settings.get(
-                CONF_OVERWRITE_EXISTING,
-                DEFAULT_OVERWRITE_EXISTING,
-            ),
-        )
-        await _async_notify_installation(hass, results, automatic=True)
-        _LOGGER.debug("Automatischer Ressourcenexport abgeschlossen: %s", results)
-
     return True
 
 
-async def async_unload_entry_integration(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Entlaedt Kuehlgeraet Cockpit."""
-    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+async def async_unload_entry_integration(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+) -> bool:
+    """Unload Kuehlgeraet Cockpit."""
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    if unload_ok:
+        from .runtime import async_get_runtime
+
+        runtime = await async_get_runtime(hass)
+        await runtime.async_unload_entry(entry)
+    return unload_ok

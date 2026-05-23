@@ -1,41 +1,296 @@
-"""Runtime state for Kuehlgeraet Cockpit."""
+"""Runtime control loop for Kuehlgeraet Cockpit."""
+
 from __future__ import annotations
 
 from collections.abc import Callable
+from datetime import timedelta, timezone
+import logging
 from typing import Any
 
-from homeassistant.core import HomeAssistant
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant, State, callback
+from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers.event import (
+    async_track_state_change_event,
+    async_track_time_interval,
+)
 from homeassistant.helpers.storage import Store
+import homeassistant.util.dt as dt_util
 
-from .const import DATA_RUNTIME, DOMAIN, STORAGE_KEY, STORAGE_VERSION
+from .const import (
+    CONF_AUTO_APPLY,
+    CONF_CHEAP_ENTITY,
+    CONF_CHEAP_OFF_TEMP,
+    CONF_CHEAP_ON_TEMP,
+    CONF_COMPRESSOR_RUNNING_WATTS,
+    CONF_EVALUATION_INTERVAL,
+    CONF_EXPENSIVE_OFF_TEMP,
+    CONF_EXPENSIVE_ON_TEMP,
+    CONF_FAILSAFE_ON,
+    CONF_MIN_OFF_SECONDS,
+    CONF_MIN_ON_SECONDS,
+    CONF_POWER_ENTITY,
+    CONF_PRICE_ENTITY,
+    CONF_PRICE_MAX_ENTITY,
+    CONF_PRICE_MIN_ENTITY,
+    CONF_TARGET_ENTITY,
+    CONF_TEMPERATURE_ENTITY,
+    DATA_RUNTIME,
+    DEFAULT_AUTO_APPLY,
+    DEFAULT_CHEAP_ENTITY,
+    DEFAULT_CHEAP_OFF_TEMP,
+    DEFAULT_CHEAP_ON_TEMP,
+    DEFAULT_COMPRESSOR_RUNNING_WATTS,
+    DEFAULT_EVALUATION_INTERVAL,
+    DEFAULT_EXPENSIVE_OFF_TEMP,
+    DEFAULT_EXPENSIVE_ON_TEMP,
+    DEFAULT_FAILSAFE_ON,
+    DEFAULT_MIN_OFF_SECONDS,
+    DEFAULT_MIN_ON_SECONDS,
+    DEFAULT_POWER_ENTITY,
+    DEFAULT_PRICE_ENTITY,
+    DEFAULT_PRICE_MAX_ENTITY,
+    DEFAULT_PRICE_MIN_ENTITY,
+    DEFAULT_TARGET_ENTITY,
+    DEFAULT_TEMPERATURE_ENTITY,
+    DOMAIN,
+    NUMERIC_SETTING_DEFAULTS,
+    RUNTIME_SETTING_KEYS,
+    STORAGE_KEY,
+    STORAGE_VERSION,
+)
+from .engine import (
+    ACTION_NONE,
+    ACTION_TURN_OFF,
+    ACTION_TURN_ON,
+    RuleSettings,
+    RuleSnapshot,
+    as_bool,
+    as_float,
+    evaluate_rules,
+)
+
+_LOGGER = logging.getLogger(__name__)
+
+DEFAULT_SETTINGS: dict[str, Any] = {
+    CONF_TARGET_ENTITY: DEFAULT_TARGET_ENTITY,
+    CONF_TEMPERATURE_ENTITY: DEFAULT_TEMPERATURE_ENTITY,
+    CONF_POWER_ENTITY: DEFAULT_POWER_ENTITY,
+    CONF_PRICE_ENTITY: DEFAULT_PRICE_ENTITY,
+    CONF_PRICE_MIN_ENTITY: DEFAULT_PRICE_MIN_ENTITY,
+    CONF_PRICE_MAX_ENTITY: DEFAULT_PRICE_MAX_ENTITY,
+    CONF_CHEAP_ENTITY: DEFAULT_CHEAP_ENTITY,
+    CONF_AUTO_APPLY: DEFAULT_AUTO_APPLY,
+    CONF_FAILSAFE_ON: DEFAULT_FAILSAFE_ON,
+    CONF_EVALUATION_INTERVAL: DEFAULT_EVALUATION_INTERVAL,
+    CONF_COMPRESSOR_RUNNING_WATTS: DEFAULT_COMPRESSOR_RUNNING_WATTS,
+    CONF_MIN_ON_SECONDS: DEFAULT_MIN_ON_SECONDS,
+    CONF_MIN_OFF_SECONDS: DEFAULT_MIN_OFF_SECONDS,
+    CONF_CHEAP_ON_TEMP: DEFAULT_CHEAP_ON_TEMP,
+    CONF_CHEAP_OFF_TEMP: DEFAULT_CHEAP_OFF_TEMP,
+    CONF_EXPENSIVE_ON_TEMP: DEFAULT_EXPENSIVE_ON_TEMP,
+    CONF_EXPENSIVE_OFF_TEMP: DEFAULT_EXPENSIVE_OFF_TEMP,
+}
+
+ENTITY_SETTING_KEYS = (
+    CONF_TARGET_ENTITY,
+    CONF_TEMPERATURE_ENTITY,
+    CONF_POWER_ENTITY,
+    CONF_PRICE_ENTITY,
+    CONF_PRICE_MIN_ENTITY,
+    CONF_PRICE_MAX_ENTITY,
+    CONF_CHEAP_ENTITY,
+)
 
 
 class KuehlgeraetCockpitRuntime:
-    """Keep the latest dashboard payload and notify listeners."""
+    """Keep rule-engine state, settings, and Home Assistant listeners."""
 
     def __init__(self, hass: HomeAssistant) -> None:
         self.hass = hass
+        self._entry: ConfigEntry | None = None
         self._status: dict[str, Any] = {}
+        self._settings: dict[str, Any] = {}
+        self._enabled = True
+        self._simulation = False
         self._listeners: list[Callable[[], None]] = []
+        self._unsubscribers: list[Callable[[], None]] = []
         self._store: Store[dict[str, Any]] = Store(hass, STORAGE_VERSION, STORAGE_KEY)
 
     @property
     def status(self) -> dict[str, Any]:
-        """Return the latest stored status payload."""
+        """Return the latest rule-engine status."""
         return self._status
 
+    @property
+    def enabled(self) -> bool:
+        """Return whether automatic decisions are enabled."""
+        return self._enabled
+
+    @property
+    def simulation(self) -> bool:
+        """Return whether actions are simulated instead of sent."""
+        return self._simulation
+
+    def setting_value(self, key: str) -> Any:
+        """Return a merged setting value."""
+        return self.settings.get(key)
+
+    @property
+    def settings(self) -> dict[str, Any]:
+        """Return entry defaults merged with runtime overrides."""
+        merged = dict(DEFAULT_SETTINGS)
+        if self._entry is not None:
+            merged.update(self._entry.data)
+            merged.update(self._entry.options)
+        merged.update(self._settings)
+
+        for key in ENTITY_SETTING_KEYS:
+            merged[key] = str(merged.get(key) or "").strip()
+
+        merged[CONF_AUTO_APPLY] = bool(merged.get(CONF_AUTO_APPLY, DEFAULT_AUTO_APPLY))
+        merged[CONF_FAILSAFE_ON] = bool(
+            merged.get(CONF_FAILSAFE_ON, DEFAULT_FAILSAFE_ON)
+        )
+        merged[CONF_EVALUATION_INTERVAL] = max(
+            30,
+            int(merged.get(CONF_EVALUATION_INTERVAL, DEFAULT_EVALUATION_INTERVAL)),
+        )
+        merged[CONF_MIN_ON_SECONDS] = max(
+            0,
+            int(merged.get(CONF_MIN_ON_SECONDS, DEFAULT_MIN_ON_SECONDS)),
+        )
+        merged[CONF_MIN_OFF_SECONDS] = max(
+            0,
+            int(merged.get(CONF_MIN_OFF_SECONDS, DEFAULT_MIN_OFF_SECONDS)),
+        )
+
+        for key, default in NUMERIC_SETTING_DEFAULTS.items():
+            if key not in {CONF_MIN_ON_SECONDS, CONF_MIN_OFF_SECONDS}:
+                merged[key] = float(merged.get(key, default))
+
+        return merged
+
     async def async_load(self) -> None:
-        """Load the last stored payload from disk."""
+        """Load the last stored runtime payload from disk."""
         stored = await self._store.async_load()
-        if isinstance(stored, dict):
+        if not isinstance(stored, dict):
+            return
+
+        if "status" not in stored:
             self._status = stored
+            return
+
+        self._status = dict(stored.get("status") or {})
+        self._settings = {
+            key: value
+            for key, value in dict(stored.get("settings") or {}).items()
+            if key in RUNTIME_SETTING_KEYS
+        }
+        self._enabled = bool(stored.get("enabled", True))
+        self._simulation = bool(stored.get("simulation", False))
+
+    async def async_save(self) -> None:
+        """Persist runtime state."""
+        await self._store.async_save(
+            {
+                "status": self._status,
+                "settings": self._settings,
+                "enabled": self._enabled,
+                "simulation": self._simulation,
+            }
+        )
+
+    async def async_setup_entry(self, entry: ConfigEntry) -> None:
+        """Attach a config entry and start tracking configured entities."""
+        self._entry = entry
+        self._reset_tracking()
+        await self.async_evaluate(apply_decision=False, reason="startup")
+
+    async def async_unload_entry(self, entry: ConfigEntry) -> None:
+        """Detach a config entry and stop listeners."""
+        if self._entry is entry:
+            self._entry = None
+        self._clear_unsubscribers()
+
+    async def async_set_enabled(self, enabled: bool) -> None:
+        """Enable or disable the rule engine."""
+        self._enabled = bool(enabled)
+        await self.async_evaluate(apply_decision=False, reason="set_enabled")
+
+    async def async_set_simulation(self, enabled: bool) -> None:
+        """Enable or disable simulation mode."""
+        self._simulation = bool(enabled)
+        await self.async_evaluate(apply_decision=False, reason="set_simulation")
+
+    async def async_set_setting(self, key: str, value: Any) -> None:
+        """Update a runtime numeric setting."""
+        if key not in RUNTIME_SETTING_KEYS:
+            raise HomeAssistantError(f"Unbekannte Einstellung: {key}")
+
+        numeric_value = as_float(value)
+        if numeric_value is None:
+            raise HomeAssistantError(f"Einstellung {key} muss numerisch sein.")
+
+        if key in {CONF_MIN_ON_SECONDS, CONF_MIN_OFF_SECONDS}:
+            self._settings[key] = max(0, int(numeric_value))
+        elif key == CONF_COMPRESSOR_RUNNING_WATTS:
+            self._settings[key] = max(0.0, float(numeric_value))
+        else:
+            self._settings[key] = float(numeric_value)
+
+        await self.async_evaluate(apply_decision=False, reason="set_setting")
 
     async def async_set_status(self, status: dict[str, Any]) -> None:
-        """Persist the latest dashboard status."""
+        """Legacy helper to overwrite the exposed status payload."""
         self._status = dict(status)
-        await self._store.async_save(self._status)
-        for listener in list(self._listeners):
-            listener()
+        await self.async_save()
+        self._notify()
+
+    async def async_evaluate(
+        self,
+        *,
+        apply_decision: bool,
+        reason: str = "manual",
+    ) -> dict[str, Any]:
+        """Evaluate rules and optionally apply the planned decision."""
+        settings = self.settings
+        rule_settings = self._build_rule_settings(settings)
+        snapshot = self._build_snapshot(settings)
+        status = evaluate_rules(rule_settings, snapshot)
+        status.update(
+            {
+                "auto_apply": settings[CONF_AUTO_APPLY],
+                "evaluation_interval": settings[CONF_EVALUATION_INTERVAL],
+                "temperature_entity": settings[CONF_TEMPERATURE_ENTITY],
+                "power_entity": settings[CONF_POWER_ENTITY],
+                "price_entity": settings[CONF_PRICE_ENTITY],
+                "price_min_entity": settings[CONF_PRICE_MIN_ENTITY],
+                "price_max_entity": settings[CONF_PRICE_MAX_ENTITY],
+                "cheap_entity": settings[CONF_CHEAP_ENTITY],
+                "trigger": reason,
+                "updated_at": dt_util.utcnow().isoformat(),
+                "applied_action_key": ACTION_NONE,
+                "applied_action": "Keine Aktion",
+                "apply_blocked_by": None,
+            }
+        )
+
+        planned_action = status.get("planned_action_key")
+        can_apply = planned_action in {ACTION_TURN_ON, ACTION_TURN_OFF}
+
+        if apply_decision and can_apply:
+            if not self._enabled:
+                status["apply_blocked_by"] = "disabled"
+            elif self._simulation:
+                status["apply_blocked_by"] = "simulation"
+            else:
+                await self._async_apply_action(planned_action, settings, status)
+
+        self._status = status
+        await self.async_save()
+        self._notify()
+        return status
 
     def async_listen(self, listener: Callable[[], None]) -> Callable[[], None]:
         """Register a callback for status updates."""
@@ -46,6 +301,172 @@ class KuehlgeraetCockpitRuntime:
                 self._listeners.remove(listener)
 
         return _unsubscribe
+
+    def _build_rule_settings(self, settings: dict[str, Any]) -> RuleSettings:
+        target_entity = settings[CONF_TARGET_ENTITY]
+        return RuleSettings(
+            enabled=self._enabled,
+            simulation=self._simulation,
+            failsafe_on=settings[CONF_FAILSAFE_ON],
+            target_entity=target_entity,
+            target_entity_configured=bool(target_entity),
+            power_entity_configured=bool(settings[CONF_POWER_ENTITY]),
+            compressor_running_watts=settings[CONF_COMPRESSOR_RUNNING_WATTS],
+            min_on_seconds=settings[CONF_MIN_ON_SECONDS],
+            min_off_seconds=settings[CONF_MIN_OFF_SECONDS],
+            cheap_on_temp=settings[CONF_CHEAP_ON_TEMP],
+            cheap_off_temp=settings[CONF_CHEAP_OFF_TEMP],
+            expensive_on_temp=settings[CONF_EXPENSIVE_ON_TEMP],
+            expensive_off_temp=settings[CONF_EXPENSIVE_OFF_TEMP],
+        )
+
+    def _build_snapshot(self, settings: dict[str, Any]) -> RuleSnapshot:
+        target = self._state(settings[CONF_TARGET_ENTITY])
+        price_state = self._state(settings[CONF_PRICE_ENTITY])
+
+        return RuleSnapshot(
+            target_state=(target.state if target is not None else None),
+            target_age_seconds=self._state_age_seconds(target),
+            temperature_c=self._float_state(settings[CONF_TEMPERATURE_ENTITY]),
+            power_w=self._float_state(settings[CONF_POWER_ENTITY]),
+            price=as_float(price_state.state) if price_state is not None else None,
+            price_min=self._price_boundary(
+                settings[CONF_PRICE_MIN_ENTITY],
+                price_state,
+                ("min_price", "today_min", "min"),
+            ),
+            price_max=self._price_boundary(
+                settings[CONF_PRICE_MAX_ENTITY],
+                price_state,
+                ("max_price", "today_max", "max"),
+            ),
+            cheap_slot=self._bool_state(settings[CONF_CHEAP_ENTITY]),
+        )
+
+    async def _async_apply_action(
+        self,
+        action: str,
+        settings: dict[str, Any],
+        status: dict[str, Any],
+    ) -> None:
+        target_entity = settings[CONF_TARGET_ENTITY]
+        try:
+            await self.hass.services.async_call(
+                "homeassistant",
+                action,
+                {"entity_id": target_entity},
+                blocking=True,
+            )
+        except Exception as err:  # noqa: BLE001
+            _LOGGER.exception("Kuehlgeraet Cockpit konnte %s nicht ausfuehren", action)
+            status["apply_blocked_by"] = "service_error"
+            status["error"] = str(err)
+            return
+
+        status["applied_action_key"] = action
+        status["applied_action"] = {
+            ACTION_TURN_ON: "Einschalten gesendet",
+            ACTION_TURN_OFF: "Ausschalten gesendet",
+        }[action]
+        status["last_action_at"] = dt_util.utcnow().isoformat()
+
+    def _state(self, entity_id: str) -> State | None:
+        if not entity_id:
+            return None
+        return self.hass.states.get(entity_id)
+
+    def _float_state(self, entity_id: str) -> float | None:
+        state = self._state(entity_id)
+        return as_float(state.state) if state is not None else None
+
+    def _bool_state(self, entity_id: str) -> bool | None:
+        state = self._state(entity_id)
+        return as_bool(state.state) if state is not None else None
+
+    def _price_boundary(
+        self,
+        entity_id: str,
+        price_state: State | None,
+        attribute_names: tuple[str, ...],
+    ) -> float | None:
+        explicit_value = self._float_state(entity_id)
+        if explicit_value is not None:
+            return explicit_value
+
+        if price_state is None:
+            return None
+
+        for attribute_name in attribute_names:
+            value = as_float(price_state.attributes.get(attribute_name))
+            if value is not None:
+                return value
+        return None
+
+    def _state_age_seconds(self, state: State | None) -> int | None:
+        if state is None:
+            return None
+        now = dt_util.utcnow()
+        last_changed = state.last_changed
+        if now.tzinfo is None and last_changed.tzinfo is not None:
+            now = now.replace(tzinfo=timezone.utc)
+        if now.tzinfo is not None and last_changed.tzinfo is None:
+            last_changed = last_changed.replace(tzinfo=timezone.utc)
+        age = now - last_changed
+        return max(0, int(age.total_seconds()))
+
+    def _reset_tracking(self) -> None:
+        self._clear_unsubscribers()
+        settings = self.settings
+        entities = [
+            entity_id
+            for entity_id in dict.fromkeys(
+                str(settings.get(key) or "").strip() for key in ENTITY_SETTING_KEYS
+            )
+            if entity_id
+        ]
+
+        if entities:
+            self._unsubscribers.append(
+                async_track_state_change_event(
+                    self.hass,
+                    entities,
+                    self._handle_state_change,
+                )
+            )
+
+        interval = timedelta(seconds=settings[CONF_EVALUATION_INTERVAL])
+        self._unsubscribers.append(
+            async_track_time_interval(self.hass, self._handle_interval, interval)
+        )
+
+    def _clear_unsubscribers(self) -> None:
+        for unsubscribe in self._unsubscribers:
+            unsubscribe()
+        self._unsubscribers.clear()
+
+    @callback
+    def _handle_state_change(self, event: Any) -> None:  # noqa: ARG002
+        settings = self.settings
+        self.hass.async_create_task(
+            self.async_evaluate(
+                apply_decision=settings[CONF_AUTO_APPLY],
+                reason="state_change",
+            )
+        )
+
+    @callback
+    def _handle_interval(self, now: Any) -> None:  # noqa: ARG002
+        settings = self.settings
+        self.hass.async_create_task(
+            self.async_evaluate(
+                apply_decision=settings[CONF_AUTO_APPLY],
+                reason="interval",
+            )
+        )
+
+    def _notify(self) -> None:
+        for listener in list(self._listeners):
+            listener()
 
 
 async def async_get_runtime(hass: HomeAssistant) -> KuehlgeraetCockpitRuntime:

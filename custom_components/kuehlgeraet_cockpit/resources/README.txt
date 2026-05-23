@@ -1,16 +1,28 @@
-Kuehlgeraet Cockpit exportierte Dateien
+Kuehlgeraet Cockpit
 
-Die Integration kann diese Dateien in den Home-Assistant-Konfigurationsordner exportieren:
+Die Integration arbeitet jetzt mit einer eigenen offenen Regel-Engine.
+Der aktive Pfad benoetigt kein Home-Assistant-Blueprint mehr.
 
-- /config/blueprints/automation/kuehlgeraet_cockpit/kuehlgeraet_tibber_shelly_kurzfristtrend.yaml
-- /config/kuehlgeraet_cockpit/dashboard/kuehlgeraet_status_sensor.yaml
-- /config/kuehlgeraet_cockpit/dashboard/kuehlgeraet_cockpit_visual_button_card_sensor.yaml
-- /config/kuehlgeraet_cockpit/dashboard/kuehlgeraet_technikpanel_sensor.yaml
-
-Live-Entitaet:
+Wichtige Entitaeten:
 - sensor.kuehlgeraet_cockpit_status
+- switch.kuehlgeraet_cockpit_regel_engine
+- switch.kuehlgeraet_cockpit_simulation
+- number.kuehlgeraet_cockpit_guenstig_einschalten_ab
+- number.kuehlgeraet_cockpit_guenstig_ausschalten_bei
+- number.kuehlgeraet_cockpit_teuer_einschalten_ab
+- number.kuehlgeraet_cockpit_teuer_ausschalten_bei
+- number.kuehlgeraet_cockpit_mindest_ein_zeit
+- number.kuehlgeraet_cockpit_mindest_aus_zeit
+- number.kuehlgeraet_cockpit_kompressor_aktiv_ab
 
-Vom Blueprint verwendeter Dienst:
-- kuehlgeraet_cockpit.set_dashboard_status
+Web-Cockpit:
+- Sidebar-Pfad: /kuehlgeraet-cockpit
+- JavaScript-Modul: custom_components/kuehlgeraet_cockpit/frontend/kuehlgeraet-cockpit-panel.js
 
-Dieses Repository kann direkt in HACS als benutzerdefinierte Integration eingebunden werden.
+Regellogik:
+- Ein Ziel kann jede Home-Assistant-Entitaet sein, die homeassistant.turn_on und homeassistant.turn_off akzeptiert.
+- Temperatur, Leistung, Strompreis, Preis-Minimum, Preis-Maximum und Guenstig-Fenster sind frei konfigurierbare Entitaeten.
+- Der Strompreis verschiebt die Ein- und Ausschaltgrenzen zwischen guenstig und teuer.
+- Bei guenstigem Preis wird frueher und tiefer gekuehlt, bei teurem Preis spaeter und weniger aggressiv.
+- Mindest-Ein- und Mindest-Aus-Zeiten schuetzen vor zu haeufigem Schalten.
+- Leistungsdaten koennen das Ausschalten blockieren, wenn der Kompressor gerade laeuft.

@@ -2,23 +2,23 @@ type: markdown
 title: Kuehlgeraet Cockpit
 content: >-
   {% set entity = 'sensor.kuehlgeraet_cockpit_status' %}
-  {% set compressor = state_attr(entity, 'compressor_running') %}
 
   **Modus:** {{ states(entity) }}
+
   **Geplante Aktion:** {{ state_attr(entity, 'planned_action') | default('-') }}
-  **Schalter / Ziel:** {{ state_attr(entity, 'switch_state_label') | default(state_attr(entity, 'switch_state') | default('-')) }} / {{ state_attr(entity, 'target_switch_state_label') | default(state_attr(entity, 'target_switch_state') | default('-')) }}
-  **Temperatur / Leistung:** {{ state_attr(entity, 'temperature_c') | default('-') }} C / {{ state_attr(entity, 'power_w') | default('-') }} W
-  **Kompressor aktiv:** {{ 'Ja' if compressor in [true, 'true', 'True'] else 'Nein' }}
 
-  **Tibber aktuell:** {{ state_attr(entity, 'price') | default('-') }}
-  **Bester Preis naechste {{ state_attr(entity, 'near_term_hours') | default('-') }} h:** {{ state_attr(entity, 'best_price_next_hours') | default('-') }} um {{ state_attr(entity, 'best_price_slot_next_hours') | default('-') }}
-  **Trend:** {{ state_attr(entity, 'price_trend_label') | default('-') }}
-  **Billigfenster aktiv:** {{ 'Ja' if state_attr(entity, 'cheap_slot') in [true, 'true', 'True'] else 'Nein' }}
-  **Billigste Slots:** {{ state_attr(entity, 'cheapest_slots_summary') | default('-') }}
+  **Ziel:** {{ state_attr(entity, 'target_entity') | default('-') }} / {{ state_attr(entity, 'target_state') | default('-') }}
 
-  **Basis-Schwellen EIN/AUS:** {{ state_attr(entity, 'selected_on_temp') | default('-') }} / {{ state_attr(entity, 'selected_off_temp') | default('-') }} C
-  **Effektive Schwellen EIN/AUS:** {{ state_attr(entity, 'effective_on_temp') | default('-') }} / {{ state_attr(entity, 'effective_off_temp') | default('-') }} C
+  **Temperatur:** {{ state_attr(entity, 'temperature_c') | default('-') }} C
+
+  **Leistung:** {{ state_attr(entity, 'power_w') | default('-') }} W
+
+  **Strompreis:** {{ state_attr(entity, 'price') | default('-') }}
+
+  **Preisfaktor:** {{ ((state_attr(entity, 'price_factor') | default(0.5)) | float * 100) | round(0) }} %
+
+  **Schwellen:** EIN {{ state_attr(entity, 'selected_on_temp') | default('-') }} C / AUS {{ state_attr(entity, 'selected_off_temp') | default('-') }} C
 
   **Grund:** {{ state_attr(entity, 'reason') | default('-') }}
 
-  _Aktualisiert: {{ state_attr(entity, 'updated') | default('-') }}_
+  _Aktualisiert: {{ state_attr(entity, 'updated_at') | default('-') }}_

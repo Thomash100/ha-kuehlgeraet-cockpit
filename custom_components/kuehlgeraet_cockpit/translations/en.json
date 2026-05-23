@@ -3,28 +3,60 @@
     "step": {
       "user": {
         "title": "Kuehlgeraet Cockpit",
-        "description": "Installiert das Kuehlgeraete-Blueprint und exportiert Dashboard-Dateien in deine Home-Assistant-Konfiguration.",
+        "description": "Set up the open rule engine for a refrigeration appliance. Target, sensors, and electricity price sources can be any Home Assistant entities.",
         "data": {
-          "install_blueprint": "Blueprint installieren",
-          "export_dashboard_snippets": "Dashboard-Dateien exportieren",
-          "overwrite_existing": "Vorhandene Dateien ueberschreiben",
-          "auto_install": "Ressourcen nach dem Setup automatisch exportieren"
+          "target_entity": "Target entity to switch",
+          "temperature_entity": "Temperature entity",
+          "power_entity": "Power entity",
+          "price_entity": "Electricity price entity",
+          "price_min_entity": "Price minimum entity",
+          "price_max_entity": "Price maximum entity",
+          "cheap_entity": "Cheap window entity",
+          "auto_apply": "Switch automatically",
+          "failsafe_on": "Turn on failsafe when temperature is missing",
+          "evaluation_interval": "Evaluation interval in seconds",
+          "compressor_running_watts": "Compressor is active above watts",
+          "min_on_seconds": "Minimum on time in seconds",
+          "min_off_seconds": "Minimum off time in seconds",
+          "cheap_on_temp": "Cheap price turn on at",
+          "cheap_off_temp": "Cheap price turn off at",
+          "expensive_on_temp": "Expensive price turn on at",
+          "expensive_off_temp": "Expensive price turn off at"
         }
       }
+    },
+    "error": {
+      "required": "This field is required."
     }
   },
   "options": {
     "step": {
       "init": {
-        "title": "Kuehlgeraet Cockpit Optionen",
-        "description": "Waehle aus, welche Dateien automatisch exportiert werden sollen.",
+        "title": "Kuehlgeraet Cockpit options",
+        "description": "Adjust sources and rule thresholds.",
         "data": {
-          "install_blueprint": "Blueprint installieren",
-          "export_dashboard_snippets": "Dashboard-Dateien exportieren",
-          "overwrite_existing": "Vorhandene Dateien ueberschreiben",
-          "auto_install": "Ressourcen nach dem Setup automatisch exportieren"
+          "target_entity": "Target entity to switch",
+          "temperature_entity": "Temperature entity",
+          "power_entity": "Power entity",
+          "price_entity": "Electricity price entity",
+          "price_min_entity": "Price minimum entity",
+          "price_max_entity": "Price maximum entity",
+          "cheap_entity": "Cheap window entity",
+          "auto_apply": "Switch automatically",
+          "failsafe_on": "Turn on failsafe when temperature is missing",
+          "evaluation_interval": "Evaluation interval in seconds",
+          "compressor_running_watts": "Compressor is active above watts",
+          "min_on_seconds": "Minimum on time in seconds",
+          "min_off_seconds": "Minimum off time in seconds",
+          "cheap_on_temp": "Cheap price turn on at",
+          "cheap_off_temp": "Cheap price turn off at",
+          "expensive_on_temp": "Expensive price turn on at",
+          "expensive_off_temp": "Expensive price turn off at"
         }
       }
+    },
+    "error": {
+      "required": "This field is required."
     }
   }
 }

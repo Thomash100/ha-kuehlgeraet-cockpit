@@ -3,28 +3,60 @@
     "step": {
       "user": {
         "title": "Kuehlgeraet Cockpit",
-        "description": "Installiert das Kuehlgeraete-Blueprint und exportiert Dashboard-Dateien in deine Home-Assistant-Konfiguration.",
+        "description": "Richte die offene Regel-Engine fuer ein Kuehlgeraet ein. Ziel, Sensoren und Strompreis-Quelle koennen beliebige Home-Assistant-Entitaeten sein.",
         "data": {
-          "install_blueprint": "Blueprint installieren",
-          "export_dashboard_snippets": "Dashboard-Dateien exportieren",
-          "overwrite_existing": "Vorhandene Dateien ueberschreiben",
-          "auto_install": "Ressourcen nach dem Setup automatisch exportieren"
+          "target_entity": "Ziel-Entitaet zum Schalten",
+          "temperature_entity": "Temperatur-Entitaet",
+          "power_entity": "Leistungs-Entitaet",
+          "price_entity": "Strompreis-Entitaet",
+          "price_min_entity": "Preis-Minimum-Entitaet",
+          "price_max_entity": "Preis-Maximum-Entitaet",
+          "cheap_entity": "Guenstig-Fenster-Entitaet",
+          "auto_apply": "Automatisch schalten",
+          "failsafe_on": "Failsafe bei fehlender Temperatur einschalten",
+          "evaluation_interval": "Auswertungsintervall in Sekunden",
+          "compressor_running_watts": "Kompressor gilt als aktiv ab Watt",
+          "min_on_seconds": "Mindest-Ein-Zeit in Sekunden",
+          "min_off_seconds": "Mindest-Aus-Zeit in Sekunden",
+          "cheap_on_temp": "Bei guenstigem Preis einschalten ab",
+          "cheap_off_temp": "Bei guenstigem Preis ausschalten bei",
+          "expensive_on_temp": "Bei teurem Preis einschalten ab",
+          "expensive_off_temp": "Bei teurem Preis ausschalten bei"
         }
       }
+    },
+    "error": {
+      "required": "Dieses Feld ist erforderlich."
     }
   },
   "options": {
     "step": {
       "init": {
         "title": "Kuehlgeraet Cockpit Optionen",
-        "description": "Waehle aus, welche Dateien automatisch exportiert werden sollen.",
+        "description": "Passe Quellen und Regelgrenzen an.",
         "data": {
-          "install_blueprint": "Blueprint installieren",
-          "export_dashboard_snippets": "Dashboard-Dateien exportieren",
-          "overwrite_existing": "Vorhandene Dateien ueberschreiben",
-          "auto_install": "Ressourcen nach dem Setup automatisch exportieren"
+          "target_entity": "Ziel-Entitaet zum Schalten",
+          "temperature_entity": "Temperatur-Entitaet",
+          "power_entity": "Leistungs-Entitaet",
+          "price_entity": "Strompreis-Entitaet",
+          "price_min_entity": "Preis-Minimum-Entitaet",
+          "price_max_entity": "Preis-Maximum-Entitaet",
+          "cheap_entity": "Guenstig-Fenster-Entitaet",
+          "auto_apply": "Automatisch schalten",
+          "failsafe_on": "Failsafe bei fehlender Temperatur einschalten",
+          "evaluation_interval": "Auswertungsintervall in Sekunden",
+          "compressor_running_watts": "Kompressor gilt als aktiv ab Watt",
+          "min_on_seconds": "Mindest-Ein-Zeit in Sekunden",
+          "min_off_seconds": "Mindest-Aus-Zeit in Sekunden",
+          "cheap_on_temp": "Bei guenstigem Preis einschalten ab",
+          "cheap_off_temp": "Bei guenstigem Preis ausschalten bei",
+          "expensive_on_temp": "Bei teurem Preis einschalten ab",
+          "expensive_off_temp": "Bei teurem Preis ausschalten bei"
         }
       }
+    },
+    "error": {
+      "required": "Dieses Feld ist erforderlich."
     }
   }
 }

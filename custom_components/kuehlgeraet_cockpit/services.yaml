@@ -1,36 +1,72 @@
-install_resources:
-  name: Ressourcen installieren oder exportieren
-  description: Kopiert Blueprint und Dashboard-Dateien aus der Integration in das Home-Assistant-Konfigurationsverzeichnis.
+evaluate_now:
+  name: Regeln jetzt auswerten
+  description: Bewertet Temperatur, Leistungsdaten und Strompreis sofort. Optional wird die geplante Aktion direkt ausgefuehrt.
   fields:
     config_entry_id:
       name: Konfigurationseintrag-ID
       description: Optionale ID eines Konfigurationseintrags, wenn gezielt ein bestimmter Eintrag angesprochen werden soll.
       selector:
         text:
-    install_blueprint:
-      name: Blueprint installieren
-      description: Exportiert das Automations-Blueprint in den Blueprint-Ordner.
-      selector:
-        boolean:
-    export_dashboard_snippets:
-      name: Dashboard-Dateien exportieren
-      description: Exportiert die Dashboard-YAML-Dateien nach /config/kuehlgeraet_cockpit/dashboard/.
-      selector:
-        boolean:
-    overwrite_existing:
-      name: Vorhandene Dateien ueberschreiben
-      description: Ersetzt Dateien, die am Zielpfad bereits vorhanden sind.
+    apply:
+      name: Aktion ausfuehren
+      description: Fuehrt eine geplante Schaltaktion ueber homeassistant.turn_on oder homeassistant.turn_off aus.
+      default: false
       selector:
         boolean:
 
-set_dashboard_status:
-  name: Dashboard-Status setzen
-  description: Aktualisiert den Live-Statussensor von Kuehlgeraet Cockpit aus einer Automation.
+set_enabled:
+  name: Regel-Engine aktivieren
+  description: Aktiviert oder deaktiviert die Regel-Engine.
   fields:
-    status_json:
-      name: Status-JSON
-      description: Kompaktes JSON-Objekt mit dem aktuellen Kuehlstatus.
-      required: true
+    config_entry_id:
+      name: Konfigurationseintrag-ID
       selector:
         text:
-          multiline: true
+    enabled:
+      name: Aktiviert
+      required: true
+      selector:
+        boolean:
+
+set_simulation:
+  name: Simulation setzen
+  description: Aktiviert oder deaktiviert den Simulationsmodus. Im Simulationsmodus werden Entscheidungen berechnet, aber nicht geschaltet.
+  fields:
+    config_entry_id:
+      name: Konfigurationseintrag-ID
+      selector:
+        text:
+    enabled:
+      name: Simulation aktiv
+      required: true
+      selector:
+        boolean:
+
+set_setting:
+  name: Laufzeit-Einstellung setzen
+  description: Setzt eine numerische Regel-Einstellung ohne Neustart.
+  fields:
+    config_entry_id:
+      name: Konfigurationseintrag-ID
+      selector:
+        text:
+    setting:
+      name: Einstellung
+      required: true
+      selector:
+        select:
+          options:
+            - compressor_running_watts
+            - min_on_seconds
+            - min_off_seconds
+            - cheap_on_temp
+            - cheap_off_temp
+            - expensive_on_temp
+            - expensive_off_temp
+    value:
+      name: Wert
+      required: true
+      selector:
+        number:
+          mode: box
+          step: 0.1
