@@ -5,7 +5,11 @@
         "title": "Kuehlgeraet Cockpit",
         "description": "Richte die offene Regel-Engine fuer ein Kuehlgeraet ein. Ziel, Sensoren und Strompreis-Quelle koennen beliebige Home-Assistant-Entitaeten sein.",
         "data": {
-          "target_entity": "Ziel-Entitaet zum Schalten",
+          "target_entity": "Ziel-Entitaeten zum Schalten",
+          "turn_on_service": "Dienst fuer Einschalten",
+          "turn_off_service": "Dienst fuer Ausschalten",
+          "turn_on_action_entities": "Zusaetzliche Einschalt-Aktionen",
+          "turn_off_action_entities": "Zusaetzliche Ausschalt-Aktionen",
           "temperature_entity": "Temperatur-Entitaet",
           "power_entity": "Leistungs-Entitaet",
           "price_entity": "Strompreis-Entitaet",
@@ -26,7 +30,8 @@
       }
     },
     "error": {
-      "required": "Dieses Feld ist erforderlich."
+      "required": "Dieses Feld ist erforderlich.",
+      "invalid_service": "Bitte als domain.service angeben, z. B. homeassistant.turn_on."
     }
   },
   "options": {
@@ -35,7 +40,11 @@
         "title": "Kuehlgeraet Cockpit Optionen",
         "description": "Passe Quellen und Regelgrenzen an.",
         "data": {
-          "target_entity": "Ziel-Entitaet zum Schalten",
+          "target_entity": "Ziel-Entitaeten zum Schalten",
+          "turn_on_service": "Dienst fuer Einschalten",
+          "turn_off_service": "Dienst fuer Ausschalten",
+          "turn_on_action_entities": "Zusaetzliche Einschalt-Aktionen",
+          "turn_off_action_entities": "Zusaetzliche Ausschalt-Aktionen",
           "temperature_entity": "Temperatur-Entitaet",
           "power_entity": "Leistungs-Entitaet",
           "price_entity": "Strompreis-Entitaet",
@@ -56,7 +65,8 @@
       }
     },
     "error": {
-      "required": "Dieses Feld ist erforderlich."
+      "required": "Dieses Feld ist erforderlich.",
+      "invalid_service": "Bitte als domain.service angeben, z. B. homeassistant.turn_on."
     }
   }
 }

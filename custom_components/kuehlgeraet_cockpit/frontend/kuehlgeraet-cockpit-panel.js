@@ -62,6 +62,13 @@ class KuehlgeraetCockpitPanel extends HTMLElement {
     return `${this._escape(value)}${suffix}`;
   }
 
+  _list(value) {
+    if (Array.isArray(value)) {
+      return value.join(", ");
+    }
+    return value || "";
+  }
+
   _metric(icon, label, value, sub = "") {
     return `
       <section class="metric">
@@ -332,7 +339,7 @@ class KuehlgeraetCockpitPanel extends HTMLElement {
             <h1>Kuehlgeraet Cockpit</h1>
             <div class="subline">
               <span class="badge"><ha-icon icon="mdi:state-machine"></ha-icon>${this._escape(mode)}</span>
-              <span>${this._escape(attrs.target_entity || "kein Ziel")}</span>
+              <span>${this._escape(this._list(attrs.target_entities) || attrs.target_entity || "kein Ziel")}</span>
               <span>${this._escape(attrs.updated_at || "")}</span>
             </div>
           </div>
@@ -367,6 +374,7 @@ class KuehlgeraetCockpitPanel extends HTMLElement {
             <p class="reason">${this._escape(attrs.reason || "Noch keine Bewertung vorhanden.")}</p>
           </div>
           <div class="rows">
+            ${this._row("Primaeres Ziel", attrs.target_entity, "mdi:toggle-switch-outline")}
             ${this._row("Zielzustand", attrs.target_state, "mdi:toggle-switch-outline")}
             ${this._row("Letzte Aktion", attrs.applied_action, "mdi:send-check-outline")}
             ${this._row("Blockiert durch", attrs.apply_blocked_by, "mdi:shield-alert-outline")}
@@ -378,11 +386,15 @@ class KuehlgeraetCockpitPanel extends HTMLElement {
             ${this._row("Temperatur", attrs.temperature_entity, "mdi:thermometer")}
             ${this._row("Leistung", attrs.power_entity, "mdi:flash")}
             ${this._row("Strompreis", attrs.price_entity, "mdi:currency-eur")}
+            ${this._row("Einschalt-Dienst", attrs.turn_on_service, "mdi:play")}
+            ${this._row("Einschalt-Aktionen", this._list(attrs.turn_on_action_entities), "mdi:script-text-play-outline")}
           </div>
           <div class="rows">
             ${this._row("Preis Minimum", attrs.price_min_entity, "mdi:arrow-down-bold")}
             ${this._row("Preis Maximum", attrs.price_max_entity, "mdi:arrow-up-bold")}
             ${this._row("Guenstig-Sensor", attrs.cheap_entity, "mdi:cash-check")}
+            ${this._row("Ausschalt-Dienst", attrs.turn_off_service, "mdi:stop")}
+            ${this._row("Ausschalt-Aktionen", this._list(attrs.turn_off_action_entities), "mdi:script-text-outline")}
           </div>
         </section>
       </main>

@@ -20,7 +20,11 @@ Web-Cockpit:
 - JavaScript-Modul: custom_components/kuehlgeraet_cockpit/frontend/kuehlgeraet-cockpit-panel.js
 
 Regellogik:
-- Ein Ziel kann jede Home-Assistant-Entitaet sein, die homeassistant.turn_on und homeassistant.turn_off akzeptiert.
+- Ziele werden im Home-Assistant-Entity-Dropdown ausgewaehlt.
+- Es koennen mehrere Ziel-Entitaeten geschaltet werden; die erste Ziel-Entitaet liefert den primaeren Ein/Aus-Status.
+- Ein- und Ausschalten nutzen standardmaessig homeassistant.turn_on und homeassistant.turn_off.
+- Die Dienste koennen in den Optionen angepasst werden, z. B. switch.turn_on und switch.turn_off.
+- Zusaetzliche Aktionsentitaeten wie script.*, scene.* oder Helper mit turn_on koennen je Richtung ausgewaehlt werden.
 - Temperatur, Leistung, Strompreis, Preis-Minimum, Preis-Maximum und Guenstig-Fenster sind frei konfigurierbare Entitaeten.
 - Der Strompreis verschiebt die Ein- und Ausschaltgrenzen zwischen guenstig und teuer.
 - Bei guenstigem Preis wird frueher und tiefer gekuehlt, bei teurem Preis spaeter und weniger aggressiv.

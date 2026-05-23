@@ -35,6 +35,10 @@ from .const import (
     CONF_PRICE_MIN_ENTITY,
     CONF_TARGET_ENTITY,
     CONF_TEMPERATURE_ENTITY,
+    CONF_TURN_OFF_ACTION_ENTITIES,
+    CONF_TURN_OFF_SERVICE,
+    CONF_TURN_ON_ACTION_ENTITIES,
+    CONF_TURN_ON_SERVICE,
     DATA_RUNTIME,
     DEFAULT_AUTO_APPLY,
     DEFAULT_CHEAP_ENTITY,
@@ -52,7 +56,12 @@ from .const import (
     DEFAULT_PRICE_MAX_ENTITY,
     DEFAULT_PRICE_MIN_ENTITY,
     DEFAULT_TARGET_ENTITY,
+    DEFAULT_TARGET_ENTITIES,
     DEFAULT_TEMPERATURE_ENTITY,
+    DEFAULT_TURN_OFF_ACTION_ENTITIES,
+    DEFAULT_TURN_OFF_SERVICE,
+    DEFAULT_TURN_ON_ACTION_ENTITIES,
+    DEFAULT_TURN_ON_SERVICE,
     DOMAIN,
     NUMERIC_SETTING_DEFAULTS,
     RUNTIME_SETTING_KEYS,
@@ -73,7 +82,11 @@ from .engine import (
 _LOGGER = logging.getLogger(__name__)
 
 DEFAULT_SETTINGS: dict[str, Any] = {
-    CONF_TARGET_ENTITY: DEFAULT_TARGET_ENTITY,
+    CONF_TARGET_ENTITY: DEFAULT_TARGET_ENTITIES,
+    CONF_TURN_ON_SERVICE: DEFAULT_TURN_ON_SERVICE,
+    CONF_TURN_OFF_SERVICE: DEFAULT_TURN_OFF_SERVICE,
+    CONF_TURN_ON_ACTION_ENTITIES: DEFAULT_TURN_ON_ACTION_ENTITIES,
+    CONF_TURN_OFF_ACTION_ENTITIES: DEFAULT_TURN_OFF_ACTION_ENTITIES,
     CONF_TEMPERATURE_ENTITY: DEFAULT_TEMPERATURE_ENTITY,
     CONF_POWER_ENTITY: DEFAULT_POWER_ENTITY,
     CONF_PRICE_ENTITY: DEFAULT_PRICE_ENTITY,
@@ -93,7 +106,6 @@ DEFAULT_SETTINGS: dict[str, Any] = {
 }
 
 ENTITY_SETTING_KEYS = (
-    CONF_TARGET_ENTITY,
     CONF_TEMPERATURE_ENTITY,
     CONF_POWER_ENTITY,
     CONF_PRICE_ENTITY,
@@ -101,6 +113,27 @@ ENTITY_SETTING_KEYS = (
     CONF_PRICE_MAX_ENTITY,
     CONF_CHEAP_ENTITY,
 )
+
+LIST_ENTITY_SETTING_KEYS = (
+    CONF_TARGET_ENTITY,
+    CONF_TURN_ON_ACTION_ENTITIES,
+    CONF_TURN_OFF_ACTION_ENTITIES,
+)
+
+
+def _entity_list(value: Any) -> list[str]:
+    if value is None:
+        return []
+    if isinstance(value, str):
+        return [value.strip()] if value.strip() else []
+    if isinstance(value, list | tuple | set):
+        return [str(item).strip() for item in value if str(item).strip()]
+    return []
+
+
+def _primary_entity(value: Any) -> str:
+    entities = _entity_list(value)
+    return entities[0] if entities else DEFAULT_TARGET_ENTITY
 
 
 class KuehlgeraetCockpitRuntime:
@@ -145,8 +178,18 @@ class KuehlgeraetCockpitRuntime:
             merged.update(self._entry.options)
         merged.update(self._settings)
 
+        for key in LIST_ENTITY_SETTING_KEYS:
+            merged[key] = _entity_list(merged.get(key))
+
         for key in ENTITY_SETTING_KEYS:
             merged[key] = str(merged.get(key) or "").strip()
+
+        merged[CONF_TURN_ON_SERVICE] = str(
+            merged.get(CONF_TURN_ON_SERVICE) or DEFAULT_TURN_ON_SERVICE
+        ).strip()
+        merged[CONF_TURN_OFF_SERVICE] = str(
+            merged.get(CONF_TURN_OFF_SERVICE) or DEFAULT_TURN_OFF_SERVICE
+        ).strip()
 
         merged[CONF_AUTO_APPLY] = bool(merged.get(CONF_AUTO_APPLY, DEFAULT_AUTO_APPLY))
         merged[CONF_FAILSAFE_ON] = bool(
@@ -262,6 +305,11 @@ class KuehlgeraetCockpitRuntime:
             {
                 "auto_apply": settings[CONF_AUTO_APPLY],
                 "evaluation_interval": settings[CONF_EVALUATION_INTERVAL],
+                "target_entities": settings[CONF_TARGET_ENTITY],
+                "turn_on_service": settings[CONF_TURN_ON_SERVICE],
+                "turn_off_service": settings[CONF_TURN_OFF_SERVICE],
+                "turn_on_action_entities": settings[CONF_TURN_ON_ACTION_ENTITIES],
+                "turn_off_action_entities": settings[CONF_TURN_OFF_ACTION_ENTITIES],
                 "temperature_entity": settings[CONF_TEMPERATURE_ENTITY],
                 "power_entity": settings[CONF_POWER_ENTITY],
                 "price_entity": settings[CONF_PRICE_ENTITY],
@@ -303,7 +351,7 @@ class KuehlgeraetCockpitRuntime:
         return _unsubscribe
 
     def _build_rule_settings(self, settings: dict[str, Any]) -> RuleSettings:
-        target_entity = settings[CONF_TARGET_ENTITY]
+        target_entity = _primary_entity(settings[CONF_TARGET_ENTITY])
         return RuleSettings(
             enabled=self._enabled,
             simulation=self._simulation,
@@ -321,7 +369,7 @@ class KuehlgeraetCockpitRuntime:
         )
 
     def _build_snapshot(self, settings: dict[str, Any]) -> RuleSnapshot:
-        target = self._state(settings[CONF_TARGET_ENTITY])
+        target = self._state(_primary_entity(settings[CONF_TARGET_ENTITY]))
         price_state = self._state(settings[CONF_PRICE_ENTITY])
 
         return RuleSnapshot(
@@ -349,14 +397,38 @@ class KuehlgeraetCockpitRuntime:
         settings: dict[str, Any],
         status: dict[str, Any],
     ) -> None:
-        target_entity = settings[CONF_TARGET_ENTITY]
+        service_name = (
+            settings[CONF_TURN_ON_SERVICE]
+            if action == ACTION_TURN_ON
+            else settings[CONF_TURN_OFF_SERVICE]
+        )
+        target_entities = settings[CONF_TARGET_ENTITY]
+        action_entities = (
+            settings[CONF_TURN_ON_ACTION_ENTITIES]
+            if action == ACTION_TURN_ON
+            else settings[CONF_TURN_OFF_ACTION_ENTITIES]
+        )
+        service_calls: list[str] = []
+
         try:
-            await self.hass.services.async_call(
-                "homeassistant",
-                action,
-                {"entity_id": target_entity},
-                blocking=True,
-            )
+            if target_entities:
+                domain, service = self._split_service(service_name)
+                await self.hass.services.async_call(
+                    domain,
+                    service,
+                    {"entity_id": target_entities},
+                    blocking=True,
+                )
+                service_calls.append(f"{domain}.{service}")
+
+            if action_entities:
+                await self.hass.services.async_call(
+                    "homeassistant",
+                    "turn_on",
+                    {"entity_id": action_entities},
+                    blocking=True,
+                )
+                service_calls.append("homeassistant.turn_on")
         except Exception as err:  # noqa: BLE001
             _LOGGER.exception("Kuehlgeraet Cockpit konnte %s nicht ausfuehren", action)
             status["apply_blocked_by"] = "service_error"
@@ -368,7 +440,20 @@ class KuehlgeraetCockpitRuntime:
             ACTION_TURN_ON: "Einschalten gesendet",
             ACTION_TURN_OFF: "Ausschalten gesendet",
         }[action]
+        status["applied_services"] = service_calls
         status["last_action_at"] = dt_util.utcnow().isoformat()
+
+    def _split_service(self, service_name: str) -> tuple[str, str]:
+        if "." not in service_name:
+            raise HomeAssistantError(
+                f"Dienst muss als domain.service angegeben werden: {service_name}"
+            )
+        domain, service = service_name.split(".", 1)
+        if not domain or not service:
+            raise HomeAssistantError(
+                f"Dienst muss als domain.service angegeben werden: {service_name}"
+            )
+        return domain, service
 
     def _state(self, entity_id: str) -> State | None:
         if not entity_id:
@@ -420,7 +505,13 @@ class KuehlgeraetCockpitRuntime:
         entities = [
             entity_id
             for entity_id in dict.fromkeys(
-                str(settings.get(key) or "").strip() for key in ENTITY_SETTING_KEYS
+                [
+                    *settings[CONF_TARGET_ENTITY],
+                    *(
+                        str(settings.get(key) or "").strip()
+                        for key in ENTITY_SETTING_KEYS
+                    ),
+                ]
             )
             if entity_id
         ]

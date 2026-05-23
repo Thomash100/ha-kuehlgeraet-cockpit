@@ -6,7 +6,10 @@ Der aktive Pfad arbeitet ohne Blueprint. Temperatur, Leistung, Strompreis, Preis
 
 ## Funktionen
 
-- offene Ziel-Entitaet statt Shelly-Festlegung
+- echte Entity-Auswahl im Config-Flow statt Textfelder
+- mehrere Ziel-Entitaeten statt Shelly-Festlegung
+- konfigurierbare Ein- und Ausschalt-Dienste
+- zusaetzliche Ein-/Ausschalt-Aktionsentitaeten fuer Skripte, Szenen oder Helper mit `turn_on`
 - Strompreis wirkt direkt auf die Ein- und Ausschaltgrenzen
 - Preisbewertung ueber Preis-Min/Max oder eine beliebige Guenstig-Entitaet
 - temperaturbasierte Hysterese mit guenstig/teuer-Grenzen
@@ -40,8 +43,19 @@ HACS Custom Repository URL: `https://github.com/Thomash100/ha-kuehlgeraet-cockpi
 3. `Kuehlgeraet Cockpit` in HACS installieren.
 4. Home Assistant neu starten.
 5. Die Integration `Kuehlgeraet Cockpit` hinzufuegen.
-6. Ziel-Entitaet, Temperaturquelle und optionale Preis-/Leistungsquellen eintragen.
+6. Ziel-Entitaeten, Temperaturquelle und optionale Preis-/Leistungsquellen auswaehlen.
 7. Das Cockpit in der Sidebar unter `/kuehlgeraet-cockpit` oeffnen.
+
+## Ziele und Dienste
+
+Die Ziel-Entitaeten werden im Home-Assistant-Dropdown gewaehlt. Die erste Ziel-Entitaet dient als primaerer Status fuer Ein/Aus-Zustand und Mindestlaufzeiten; geschaltet werden alle ausgewaehlten Ziel-Entitaeten.
+
+Standarddienste:
+
+- Einschalten: `homeassistant.turn_on`
+- Ausschalten: `homeassistant.turn_off`
+
+Diese Dienste koennen in den Optionen geaendert werden, z. B. auf `switch.turn_on` / `switch.turn_off`. Fuer komplexere Ablaeufe koennen zusaetzliche Ein- und Ausschalt-Aktionsentitaeten ausgewaehlt werden, etwa `script.*`, `scene.*` oder Helper mit `turn_on`. Diese werden bei der jeweiligen Entscheidung per `homeassistant.turn_on` ausgeloest.
 
 ## Entitaeten
 

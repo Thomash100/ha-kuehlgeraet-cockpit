@@ -7,6 +7,10 @@ DOMAIN = "kuehlgeraet_cockpit"
 PLATFORMS = ["sensor", "binary_sensor", "switch", "number"]
 
 CONF_TARGET_ENTITY = "target_entity"
+CONF_TURN_ON_SERVICE = "turn_on_service"
+CONF_TURN_OFF_SERVICE = "turn_off_service"
+CONF_TURN_ON_ACTION_ENTITIES = "turn_on_action_entities"
+CONF_TURN_OFF_ACTION_ENTITIES = "turn_off_action_entities"
 CONF_TEMPERATURE_ENTITY = "temperature_entity"
 CONF_POWER_ENTITY = "power_entity"
 CONF_PRICE_ENTITY = "price_entity"
@@ -31,6 +35,11 @@ CONF_VALUE = "value"
 CONF_APPLY = "apply"
 
 DEFAULT_TARGET_ENTITY = ""
+DEFAULT_TARGET_ENTITIES: list[str] = []
+DEFAULT_TURN_ON_SERVICE = "homeassistant.turn_on"
+DEFAULT_TURN_OFF_SERVICE = "homeassistant.turn_off"
+DEFAULT_TURN_ON_ACTION_ENTITIES: list[str] = []
+DEFAULT_TURN_OFF_ACTION_ENTITIES: list[str] = []
 DEFAULT_TEMPERATURE_ENTITY = ""
 DEFAULT_POWER_ENTITY = ""
 DEFAULT_PRICE_ENTITY = ""

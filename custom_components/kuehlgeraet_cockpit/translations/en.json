@@ -5,7 +5,11 @@
         "title": "Kuehlgeraet Cockpit",
         "description": "Set up the open rule engine for a refrigeration appliance. Target, sensors, and electricity price sources can be any Home Assistant entities.",
         "data": {
-          "target_entity": "Target entity to switch",
+          "target_entity": "Target entities to switch",
+          "turn_on_service": "Turn-on service",
+          "turn_off_service": "Turn-off service",
+          "turn_on_action_entities": "Additional turn-on actions",
+          "turn_off_action_entities": "Additional turn-off actions",
           "temperature_entity": "Temperature entity",
           "power_entity": "Power entity",
           "price_entity": "Electricity price entity",
@@ -26,7 +30,8 @@
       }
     },
     "error": {
-      "required": "This field is required."
+      "required": "This field is required.",
+      "invalid_service": "Use domain.service format, for example homeassistant.turn_on."
     }
   },
   "options": {
@@ -35,7 +40,11 @@
         "title": "Kuehlgeraet Cockpit options",
         "description": "Adjust sources and rule thresholds.",
         "data": {
-          "target_entity": "Target entity to switch",
+          "target_entity": "Target entities to switch",
+          "turn_on_service": "Turn-on service",
+          "turn_off_service": "Turn-off service",
+          "turn_on_action_entities": "Additional turn-on actions",
+          "turn_off_action_entities": "Additional turn-off actions",
           "temperature_entity": "Temperature entity",
           "power_entity": "Power entity",
           "price_entity": "Electricity price entity",
@@ -56,7 +65,8 @@
       }
     },
     "error": {
-      "required": "This field is required."
+      "required": "This field is required.",
+      "invalid_service": "Use domain.service format, for example homeassistant.turn_on."
     }
   }
 }
