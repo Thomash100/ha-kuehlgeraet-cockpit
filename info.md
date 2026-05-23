@@ -2,6 +2,11 @@
 
 Kuehlgeraet Cockpit ist eine HACS-installierbare Home-Assistant-Custom-Integration mit offener Regel-Engine und Web-Cockpit.
 
+HACS-Installation:
+- Direktlink: https://my.home-assistant.io/redirect/hacs_repository/?owner=Thomash100&repository=ha-kuehlgeraet-cockpit&category=integration
+- Custom Repository URL: https://github.com/Thomash100/ha-kuehlgeraet-cockpit
+- Kategorie: Integration
+
 Enthalten sind:
 - eine reine Python-Regel-Engine fuer Temperatur, Leistung und Strompreis
 - ein Home-Assistant-Sidebar-Panel unter `/kuehlgeraet-cockpit`

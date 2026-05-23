@@ -31,12 +31,17 @@ Diese Position verschiebt die Temperaturgrenzen kontinuierlich:
 
 ## Installation
 
-1. Dieses Repository in HACS als benutzerdefinierte Integration hinzufuegen.
-2. `Kuehlgeraet Cockpit` installieren.
-3. Home Assistant neu starten.
-4. Die Integration `Kuehlgeraet Cockpit` hinzufuegen.
-5. Ziel-Entitaet, Temperaturquelle und optionale Preis-/Leistungsquellen eintragen.
-6. Das Cockpit in der Sidebar unter `/kuehlgeraet-cockpit` oeffnen.
+[![In HACS hinzufuegen](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Thomash100&repository=ha-kuehlgeraet-cockpit&category=integration)
+
+HACS Custom Repository URL: `https://github.com/Thomash100/ha-kuehlgeraet-cockpit`
+
+1. Link oben oeffnen oder in HACS `Benutzerdefinierte Repositories` waehlen.
+2. Repository-URL eintragen und Kategorie `Integration` auswaehlen.
+3. `Kuehlgeraet Cockpit` in HACS installieren.
+4. Home Assistant neu starten.
+5. Die Integration `Kuehlgeraet Cockpit` hinzufuegen.
+6. Ziel-Entitaet, Temperaturquelle und optionale Preis-/Leistungsquellen eintragen.
+7. Das Cockpit in der Sidebar unter `/kuehlgeraet-cockpit` oeffnen.
 
 ## Entitaeten
 
