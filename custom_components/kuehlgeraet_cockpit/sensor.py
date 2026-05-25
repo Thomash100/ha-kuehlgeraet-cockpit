@@ -10,7 +10,12 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN, STATUS_SENSOR_NAME, STATUS_SENSOR_UNIQUE_ID
+from .const import (
+    DOMAIN,
+    STATUS_SENSOR_NAME,
+    STATUS_SENSOR_OBJECT_ID,
+    STATUS_SENSOR_UNIQUE_ID,
+)
 from .runtime import KuehlgeraetCockpitRuntime, async_get_runtime
 
 
@@ -22,15 +27,52 @@ class MetricDescription:
     name: str
     unit: str | None
     icon: str
+    object_id: str
 
 
 METRIC_DESCRIPTIONS = (
-    MetricDescription("temperature_c", "Kuehlgeraet Cockpit Temperatur", "C", "mdi:thermometer"),
-    MetricDescription("power_w", "Kuehlgeraet Cockpit Leistung", "W", "mdi:flash"),
-    MetricDescription("price", "Kuehlgeraet Cockpit Strompreis", None, "mdi:currency-eur"),
-    MetricDescription("price_factor", "Kuehlgeraet Cockpit Preisfaktor", "%", "mdi:chart-bell-curve"),
-    MetricDescription("selected_on_temp", "Kuehlgeraet Cockpit Einschaltgrenze", "C", "mdi:thermometer-plus"),
-    MetricDescription("selected_off_temp", "Kuehlgeraet Cockpit Ausschaltgrenze", "C", "mdi:thermometer-minus"),
+    MetricDescription(
+        "temperature_c",
+        "Kuehlgeraet Cockpit Quelle Ist-Temperatur",
+        "C",
+        "mdi:thermometer",
+        "temperatur",
+    ),
+    MetricDescription(
+        "power_w",
+        "Kuehlgeraet Cockpit Quelle Leistungsaufnahme",
+        "W",
+        "mdi:flash",
+        "leistung",
+    ),
+    MetricDescription(
+        "price",
+        "Kuehlgeraet Cockpit Quelle aktueller Strompreis",
+        None,
+        "mdi:currency-eur",
+        "strompreis",
+    ),
+    MetricDescription(
+        "price_factor",
+        "Kuehlgeraet Cockpit Bewertung Preisposition",
+        "%",
+        "mdi:chart-bell-curve",
+        "preisfaktor",
+    ),
+    MetricDescription(
+        "selected_on_temp",
+        "Kuehlgeraet Cockpit Regelgrenze Einschalten ab",
+        "C",
+        "mdi:thermometer-plus",
+        "einschaltgrenze",
+    ),
+    MetricDescription(
+        "selected_off_temp",
+        "Kuehlgeraet Cockpit Regelgrenze Ausschalten bei",
+        "C",
+        "mdi:thermometer-minus",
+        "ausschaltgrenze",
+    ),
 )
 
 
@@ -54,6 +96,7 @@ class KuehlgeraetCockpitStatusSensor(SensorEntity):
 
     _attr_name = STATUS_SENSOR_NAME
     _attr_unique_id = STATUS_SENSOR_UNIQUE_ID
+    _attr_suggested_object_id = STATUS_SENSOR_OBJECT_ID
     _attr_icon = "mdi:fridge-outline"
     _attr_should_poll = False
 
@@ -93,6 +136,7 @@ class KuehlgeraetCockpitMetricSensor(SensorEntity):
         self._description = description
         self._attr_name = description.name
         self._attr_unique_id = f"{DOMAIN}_{description.key}"
+        self._attr_suggested_object_id = f"{DOMAIN}_{description.object_id}"
         self._attr_icon = description.icon
         self._attr_native_unit_of_measurement = description.unit
         self._attr_suggested_display_precision = 2

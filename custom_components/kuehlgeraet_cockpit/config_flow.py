@@ -65,6 +65,35 @@ from .const import (
     DOMAIN,
 )
 
+TARGET_ENTITY_DOMAINS = [
+    "switch",
+    "input_boolean",
+    "light",
+    "fan",
+    "climate",
+    "humidifier",
+    "water_heater",
+    "media_player",
+    "cover",
+    "valve",
+    "lock",
+    "siren",
+    "vacuum",
+    "remote",
+    "script",
+    "automation",
+]
+ACTION_ENTITY_DOMAINS = [
+    "script",
+    "scene",
+    "automation",
+    "input_boolean",
+    "switch",
+    "light",
+]
+NUMERIC_SOURCE_DOMAINS = ["sensor", "number", "input_number"]
+BOOLEAN_SOURCE_DOMAINS = ["binary_sensor", "input_boolean", "switch"]
+
 
 def _entity_list(value: Any) -> list[str]:
     if value is None:
@@ -174,9 +203,10 @@ def _defaults(source: dict[str, Any]) -> dict[str, Any]:
 def _optional_entity_selector(
     field: str,
     default: str,
+    selector_config: EntitySelectorConfig | None = None,
 ) -> tuple[vol.Optional, EntitySelector]:
     marker = vol.Optional(field, default=default) if default else vol.Optional(field)
-    return marker, EntitySelector()
+    return marker, EntitySelector(selector_config)
 
 
 def _normalize_input(user_input: dict[str, Any]) -> dict[str, Any]:
@@ -217,26 +247,32 @@ def _build_schema(defaults: dict[str, Any]) -> vol.Schema:
     temperature_selector = _optional_entity_selector(
         CONF_TEMPERATURE_ENTITY,
         defaults[CONF_TEMPERATURE_ENTITY],
+        EntitySelectorConfig(domain=NUMERIC_SOURCE_DOMAINS),
     )
     power_selector = _optional_entity_selector(
         CONF_POWER_ENTITY,
         defaults[CONF_POWER_ENTITY],
+        EntitySelectorConfig(domain=NUMERIC_SOURCE_DOMAINS),
     )
     price_selector = _optional_entity_selector(
         CONF_PRICE_ENTITY,
         defaults[CONF_PRICE_ENTITY],
+        EntitySelectorConfig(domain=NUMERIC_SOURCE_DOMAINS),
     )
     price_min_selector = _optional_entity_selector(
         CONF_PRICE_MIN_ENTITY,
         defaults[CONF_PRICE_MIN_ENTITY],
+        EntitySelectorConfig(domain=NUMERIC_SOURCE_DOMAINS),
     )
     price_max_selector = _optional_entity_selector(
         CONF_PRICE_MAX_ENTITY,
         defaults[CONF_PRICE_MAX_ENTITY],
+        EntitySelectorConfig(domain=NUMERIC_SOURCE_DOMAINS),
     )
     cheap_selector = _optional_entity_selector(
         CONF_CHEAP_ENTITY,
         defaults[CONF_CHEAP_ENTITY],
+        EntitySelectorConfig(domain=BOOLEAN_SOURCE_DOMAINS),
     )
 
     return vol.Schema(
@@ -244,7 +280,12 @@ def _build_schema(defaults: dict[str, Any]) -> vol.Schema:
             vol.Required(
                 CONF_TARGET_ENTITY,
                 default=defaults[CONF_TARGET_ENTITY],
-            ): EntitySelector(EntitySelectorConfig(multiple=True, reorder=True)),
+            ): EntitySelector(
+                EntitySelectorConfig(
+                    domain=TARGET_ENTITY_DOMAINS,
+                    multiple=True,
+                )
+            ),
             vol.Required(
                 CONF_TURN_ON_SERVICE,
                 default=defaults[CONF_TURN_ON_SERVICE],
@@ -256,11 +297,21 @@ def _build_schema(defaults: dict[str, Any]) -> vol.Schema:
             vol.Optional(
                 CONF_TURN_ON_ACTION_ENTITIES,
                 default=defaults[CONF_TURN_ON_ACTION_ENTITIES],
-            ): EntitySelector(EntitySelectorConfig(multiple=True, reorder=True)),
+            ): EntitySelector(
+                EntitySelectorConfig(
+                    domain=ACTION_ENTITY_DOMAINS,
+                    multiple=True,
+                )
+            ),
             vol.Optional(
                 CONF_TURN_OFF_ACTION_ENTITIES,
                 default=defaults[CONF_TURN_OFF_ACTION_ENTITIES],
-            ): EntitySelector(EntitySelectorConfig(multiple=True, reorder=True)),
+            ): EntitySelector(
+                EntitySelectorConfig(
+                    domain=ACTION_ENTITY_DOMAINS,
+                    multiple=True,
+                )
+            ),
             vol.Optional(
                 CONF_TURN_ON_ACTIONS,
                 default=defaults[CONF_TURN_ON_ACTIONS],

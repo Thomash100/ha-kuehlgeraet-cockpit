@@ -7,6 +7,7 @@ Der aktive Pfad arbeitet ohne Blueprint. Temperatur, Leistung, Strompreis, Preis
 ## Funktionen
 
 - echte Entity-Auswahl im Config-Flow statt Textfelder
+- eindeutig beschriftete und nach Aufgabe gefilterte Auswahllisten
 - mehrere Ziel-Entitaeten statt Shelly-Festlegung
 - konfigurierbare Ein- und Ausschalt-Dienste
 - komplette Home-Assistant-Action-Sequenzen fuer mehrere Dienste pro Richtung
@@ -44,12 +45,21 @@ HACS Custom Repository URL: `https://github.com/Thomash100/ha-kuehlgeraet-cockpi
 3. `Kuehlgeraet Cockpit` in HACS installieren.
 4. Home Assistant neu starten.
 5. Die Integration `Kuehlgeraet Cockpit` hinzufuegen.
-6. Ziel-Entitaeten, Temperaturquelle und optionale Preis-/Leistungsquellen auswaehlen.
+6. Schaltziele, Temperaturquelle und optionale Preis-/Leistungsquellen auswaehlen.
 7. Das Cockpit in der Sidebar unter `/kuehlgeraet-cockpit` oeffnen.
 
 ## Ziele und Dienste
 
 Die Ziel-Entitaeten werden im Home-Assistant-Dropdown gewaehlt. Die erste Ziel-Entitaet dient als primaerer Status fuer Ein/Aus-Zustand und Mindestlaufzeiten; geschaltet werden alle ausgewaehlten Ziel-Entitaeten.
+
+Die Auswahlfelder sind bewusst nach Aufgabe benannt und gefiltert:
+
+- Schaltziele: typische schaltbare Entitaeten wie `switch.*`, `input_boolean.*`, `light.*`, `fan.*`, `climate.*`, `cover.*` oder `script.*`
+- Messquellen: numerische `sensor.*`, `number.*` oder `input_number.*`
+- Guenstig-Fenster: `binary_sensor.*`, `input_boolean.*` oder `switch.*`
+- Zusatz-Aktionsentitaeten: `script.*`, `scene.*`, `automation.*`, `input_boolean.*`, `switch.*` oder `light.*`
+
+Falls ein Sonderfall nicht in einer gefilterten Liste auftaucht, kann er ueber die Action-Sequenz mit einem eigenen Home-Assistant-Dienst angebunden werden.
 
 Standarddienste:
 

@@ -21,6 +21,7 @@ Web-Cockpit:
 
 Regellogik:
 - Ziele werden im Home-Assistant-Entity-Dropdown ausgewaehlt.
+- Auswahllisten sind nach Aufgabe benannt und gefiltert: Schaltziele, Messquellen, Preisquellen und Zusatzaktionen.
 - Es koennen mehrere Ziel-Entitaeten geschaltet werden; die erste Ziel-Entitaet liefert den primaeren Ein/Aus-Status.
 - Ein- und Ausschalten nutzen standardmaessig homeassistant.turn_on und homeassistant.turn_off.
 - Die Dienste koennen in den Optionen angepasst werden, z. B. switch.turn_on und switch.turn_off.

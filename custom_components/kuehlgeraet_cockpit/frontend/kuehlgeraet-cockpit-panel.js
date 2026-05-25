@@ -23,23 +23,27 @@ class KuehlgeraetCockpitPanel extends HTMLElement {
     this._render();
   }
 
-  _state(entityId, friendlyName) {
+  _state(entityId, friendlyNames) {
     if (!this._hass) {
       return undefined;
     }
     if (entityId && this._hass.states[entityId]) {
       return this._hass.states[entityId];
     }
-    if (!friendlyName) {
+    if (!friendlyNames) {
       return undefined;
     }
+    const names = Array.isArray(friendlyNames) ? friendlyNames : [friendlyNames];
     return Object.values(this._hass.states).find(
-      (state) => state.attributes?.friendly_name === friendlyName,
+      (state) => names.includes(state.attributes?.friendly_name),
     );
   }
 
   _status() {
-    return this._state(STATUS_ENTITY, "Kuehlgeraet Cockpit Status");
+    return this._state(STATUS_ENTITY, [
+      "Kuehlgeraet Cockpit Regelentscheidung Status",
+      "Kuehlgeraet Cockpit Status",
+    ]);
   }
 
   _escape(value) {
@@ -105,7 +109,10 @@ class KuehlgeraetCockpitPanel extends HTMLElement {
         });
       }
       if (action === "toggle-engine") {
-        const entity = this._state(ENGINE_SWITCH, "Kuehlgeraet Cockpit Regel-Engine");
+        const entity = this._state(ENGINE_SWITCH, [
+          "Kuehlgeraet Cockpit Steuerung Regel-Engine aktiv",
+          "Kuehlgeraet Cockpit Regel-Engine",
+        ]);
         if (entity) {
           await this._hass.callService("homeassistant", "toggle", {
             entity_id: entity.entity_id,
@@ -113,7 +120,10 @@ class KuehlgeraetCockpitPanel extends HTMLElement {
         }
       }
       if (action === "toggle-simulation") {
-        const entity = this._state(SIMULATION_SWITCH, "Kuehlgeraet Cockpit Simulation");
+        const entity = this._state(SIMULATION_SWITCH, [
+          "Kuehlgeraet Cockpit Steuerung Simulationsmodus aktiv",
+          "Kuehlgeraet Cockpit Simulation",
+        ]);
         if (entity) {
           await this._hass.callService("homeassistant", "toggle", {
             entity_id: entity.entity_id,
@@ -139,8 +149,14 @@ class KuehlgeraetCockpitPanel extends HTMLElement {
 
     const status = this._status();
     const attrs = status?.attributes ?? {};
-    const engine = this._state(ENGINE_SWITCH, "Kuehlgeraet Cockpit Regel-Engine");
-    const simulation = this._state(SIMULATION_SWITCH, "Kuehlgeraet Cockpit Simulation");
+    const engine = this._state(ENGINE_SWITCH, [
+      "Kuehlgeraet Cockpit Steuerung Regel-Engine aktiv",
+      "Kuehlgeraet Cockpit Regel-Engine",
+    ]);
+    const simulation = this._state(SIMULATION_SWITCH, [
+      "Kuehlgeraet Cockpit Steuerung Simulationsmodus aktiv",
+      "Kuehlgeraet Cockpit Simulation",
+    ]);
     const mode = status?.state || attrs.mode || "Bereit";
     const priceFactor = attrs.price_factor !== undefined
       ? `${Math.round(Number(attrs.price_factor) * 100)}%`

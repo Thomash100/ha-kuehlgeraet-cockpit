@@ -21,26 +21,30 @@ class BinaryDescription:
     name: str
     icon_on: str
     icon_off: str
+    object_id: str
 
 
 BINARY_DESCRIPTIONS = (
     BinaryDescription(
         "cheap_slot",
-        "Kuehlgeraet Cockpit Preisfenster guenstig",
+        "Kuehlgeraet Cockpit Bewertung Preisfenster ist guenstig",
         "mdi:cash-check",
         "mdi:cash-clock",
+        "preisfenster_guenstig",
     ),
     BinaryDescription(
         "compressor_running",
-        "Kuehlgeraet Cockpit Kompressor laeuft",
+        "Kuehlgeraet Cockpit Schutz Kompressor laeuft",
         "mdi:engine",
         "mdi:engine-off",
+        "kompressor_laeuft",
     ),
     BinaryDescription(
         "price_data_valid",
-        "Kuehlgeraet Cockpit Preisdaten aktiv",
+        "Kuehlgeraet Cockpit Bewertung Preisdaten werden genutzt",
         "mdi:chart-line",
         "mdi:chart-line-variant",
+        "preisdaten_aktiv",
     ),
 )
 
@@ -75,6 +79,7 @@ class KuehlgeraetCockpitBinarySensor(BinarySensorEntity):
         self._description = description
         self._attr_name = description.name
         self._attr_unique_id = f"{DOMAIN}_{description.key}"
+        self._attr_suggested_object_id = f"{DOMAIN}_{description.object_id}"
 
     @property
     def is_on(self) -> bool | None:

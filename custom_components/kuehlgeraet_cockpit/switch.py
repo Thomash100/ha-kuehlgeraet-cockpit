@@ -7,7 +7,12 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import ENABLED_SWITCH_UNIQUE_ID, SIMULATION_SWITCH_UNIQUE_ID
+from .const import (
+    ENABLED_SWITCH_OBJECT_ID,
+    ENABLED_SWITCH_UNIQUE_ID,
+    SIMULATION_SWITCH_OBJECT_ID,
+    SIMULATION_SWITCH_UNIQUE_ID,
+)
 from .runtime import KuehlgeraetCockpitRuntime, async_get_runtime
 
 
@@ -47,8 +52,9 @@ class _KuehlgeraetCockpitSwitch(SwitchEntity):
 class KuehlgeraetCockpitEnabledSwitch(_KuehlgeraetCockpitSwitch):
     """Enable or disable the rule engine."""
 
-    _attr_name = "Kuehlgeraet Cockpit Regel-Engine"
+    _attr_name = "Kuehlgeraet Cockpit Steuerung Regel-Engine aktiv"
     _attr_unique_id = ENABLED_SWITCH_UNIQUE_ID
+    _attr_suggested_object_id = ENABLED_SWITCH_OBJECT_ID
     _attr_icon = "mdi:power-cycle"
 
     @property
@@ -68,8 +74,9 @@ class KuehlgeraetCockpitEnabledSwitch(_KuehlgeraetCockpitSwitch):
 class KuehlgeraetCockpitSimulationSwitch(_KuehlgeraetCockpitSwitch):
     """Enable or disable simulation mode."""
 
-    _attr_name = "Kuehlgeraet Cockpit Simulation"
+    _attr_name = "Kuehlgeraet Cockpit Steuerung Simulationsmodus aktiv"
     _attr_unique_id = SIMULATION_SWITCH_UNIQUE_ID
+    _attr_suggested_object_id = SIMULATION_SWITCH_OBJECT_ID
     _attr_icon = "mdi:flask-outline"
 
     @property

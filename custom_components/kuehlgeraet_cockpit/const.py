@@ -73,9 +73,12 @@ STORAGE_VERSION = 2
 STORAGE_KEY = f"{DOMAIN}_runtime"
 
 STATUS_SENSOR_UNIQUE_ID = f"{DOMAIN}_status"
-STATUS_SENSOR_NAME = "Kuehlgeraet Cockpit Status"
+STATUS_SENSOR_NAME = "Kuehlgeraet Cockpit Regelentscheidung Status"
+STATUS_SENSOR_OBJECT_ID = f"{DOMAIN}_status"
 ENABLED_SWITCH_UNIQUE_ID = f"{DOMAIN}_enabled"
+ENABLED_SWITCH_OBJECT_ID = f"{DOMAIN}_regel_engine"
 SIMULATION_SWITCH_UNIQUE_ID = f"{DOMAIN}_simulation"
+SIMULATION_SWITCH_OBJECT_ID = f"{DOMAIN}_simulation"
 
 PANEL_URL_PATH = "kuehlgeraet-cockpit"
 PANEL_STATIC_URL = f"/{DOMAIN}/frontend"

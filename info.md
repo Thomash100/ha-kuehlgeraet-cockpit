@@ -11,6 +11,7 @@ Enthalten sind:
 - eine reine Python-Regel-Engine fuer Temperatur, Leistung und Strompreis
 - ein Home-Assistant-Sidebar-Panel unter `/kuehlgeraet-cockpit`
 - echte Entity-Auswahl im Config-Flow, auch fuer mehrere Ziel-Entitaeten
+- eindeutig beschriftete und nach Aufgabe gefilterte Auswahllisten
 - frei konfigurierbare Ein- und Ausschalt-Dienste
 - Home-Assistant-Action-Sequenzen fuer mehrere Dienste pro Richtung
 - zusaetzliche Ein-/Ausschalt-Aktionsentitaeten fuer Skripte, Szenen oder Helper mit `turn_on`

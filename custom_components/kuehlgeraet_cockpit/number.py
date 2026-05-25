@@ -33,71 +33,79 @@ class NumberDescription:
     minimum: float
     maximum: float
     step: float
+    object_id: str
 
 
 NUMBER_DESCRIPTIONS = (
     NumberDescription(
         CONF_CHEAP_ON_TEMP,
-        "Kuehlgeraet Cockpit guenstig einschalten ab",
+        "Kuehlgeraet Cockpit Grenze guenstig einschalten ab",
         "C",
         "mdi:thermometer-plus",
         -30,
         30,
         0.1,
+        "guenstig_einschalten_ab",
     ),
     NumberDescription(
         CONF_CHEAP_OFF_TEMP,
-        "Kuehlgeraet Cockpit guenstig ausschalten bei",
+        "Kuehlgeraet Cockpit Grenze guenstig ausschalten bei",
         "C",
         "mdi:thermometer-minus",
         -30,
         30,
         0.1,
+        "guenstig_ausschalten_bei",
     ),
     NumberDescription(
         CONF_EXPENSIVE_ON_TEMP,
-        "Kuehlgeraet Cockpit teuer einschalten ab",
+        "Kuehlgeraet Cockpit Grenze teuer einschalten ab",
         "C",
         "mdi:thermometer-plus",
         -30,
         30,
         0.1,
+        "teuer_einschalten_ab",
     ),
     NumberDescription(
         CONF_EXPENSIVE_OFF_TEMP,
-        "Kuehlgeraet Cockpit teuer ausschalten bei",
+        "Kuehlgeraet Cockpit Grenze teuer ausschalten bei",
         "C",
         "mdi:thermometer-minus",
         -30,
         30,
         0.1,
+        "teuer_ausschalten_bei",
     ),
     NumberDescription(
         CONF_MIN_ON_SECONDS,
-        "Kuehlgeraet Cockpit Mindest-Ein-Zeit",
+        "Kuehlgeraet Cockpit Schutz Mindest-Ein-Zeit",
         "s",
         "mdi:timer-play-outline",
         0,
         86400,
         30,
+        "mindest_ein_zeit",
     ),
     NumberDescription(
         CONF_MIN_OFF_SECONDS,
-        "Kuehlgeraet Cockpit Mindest-Aus-Zeit",
+        "Kuehlgeraet Cockpit Schutz Mindest-Aus-Zeit",
         "s",
         "mdi:timer-stop-outline",
         0,
         86400,
         30,
+        "mindest_aus_zeit",
     ),
     NumberDescription(
         CONF_COMPRESSOR_RUNNING_WATTS,
-        "Kuehlgeraet Cockpit Kompressor aktiv ab",
+        "Kuehlgeraet Cockpit Schutz Kompressor aktiv ab",
         "W",
         "mdi:flash",
         0,
         5000,
         1,
+        "kompressor_aktiv_ab",
     ),
 )
 
@@ -132,6 +140,7 @@ class KuehlgeraetCockpitNumber(NumberEntity):
         self._description = description
         self._attr_name = description.name
         self._attr_unique_id = f"{DOMAIN}_{description.key}"
+        self._attr_suggested_object_id = f"{DOMAIN}_{description.object_id}"
         self._attr_icon = description.icon
         self._attr_native_unit_of_measurement = description.unit
         self._attr_native_min_value = description.minimum
