@@ -8,7 +8,11 @@ import voluptuous as vol
 
 from homeassistant import config_entries
 from homeassistant.core import callback
-from homeassistant.helpers.selector import EntitySelector, EntitySelectorConfig
+from homeassistant.helpers.selector import (
+    ActionSelector,
+    EntitySelector,
+    EntitySelectorConfig,
+)
 
 from .const import (
     CONF_AUTO_APPLY,
@@ -29,8 +33,10 @@ from .const import (
     CONF_TARGET_ENTITY,
     CONF_TEMPERATURE_ENTITY,
     CONF_TURN_OFF_ACTION_ENTITIES,
+    CONF_TURN_OFF_ACTIONS,
     CONF_TURN_OFF_SERVICE,
     CONF_TURN_ON_ACTION_ENTITIES,
+    CONF_TURN_ON_ACTIONS,
     CONF_TURN_ON_SERVICE,
     DEFAULT_AUTO_APPLY,
     DEFAULT_CHEAP_ENTITY,
@@ -51,8 +57,10 @@ from .const import (
     DEFAULT_TARGET_ENTITIES,
     DEFAULT_TEMPERATURE_ENTITY,
     DEFAULT_TURN_OFF_ACTION_ENTITIES,
+    DEFAULT_TURN_OFF_ACTIONS,
     DEFAULT_TURN_OFF_SERVICE,
     DEFAULT_TURN_ON_ACTION_ENTITIES,
+    DEFAULT_TURN_ON_ACTIONS,
     DEFAULT_TURN_ON_SERVICE,
     DOMAIN,
 )
@@ -72,6 +80,12 @@ def _entity_value(value: Any) -> str:
     if value is None:
         return ""
     return str(value).strip()
+
+
+def _action_list(value: Any) -> list[dict[str, Any]]:
+    if not isinstance(value, list):
+        return []
+    return [dict(item) for item in value if isinstance(item, dict)]
 
 
 def _defaults(source: dict[str, Any]) -> dict[str, Any]:
@@ -104,6 +118,12 @@ def _defaults(source: dict[str, Any]) -> dict[str, Any]:
                 CONF_TURN_OFF_ACTION_ENTITIES,
                 DEFAULT_TURN_OFF_ACTION_ENTITIES,
             )
+        ),
+        CONF_TURN_ON_ACTIONS: _action_list(
+            source.get(CONF_TURN_ON_ACTIONS, DEFAULT_TURN_ON_ACTIONS)
+        ),
+        CONF_TURN_OFF_ACTIONS: _action_list(
+            source.get(CONF_TURN_OFF_ACTIONS, DEFAULT_TURN_OFF_ACTIONS)
         ),
         CONF_TEMPERATURE_ENTITY: _entity_value(
             source.get(CONF_TEMPERATURE_ENTITY, DEFAULT_TEMPERATURE_ENTITY)
@@ -167,6 +187,12 @@ def _normalize_input(user_input: dict[str, Any]) -> dict[str, Any]:
     )
     normalized[CONF_TURN_OFF_ACTION_ENTITIES] = _entity_list(
         user_input.get(CONF_TURN_OFF_ACTION_ENTITIES)
+    )
+    normalized[CONF_TURN_ON_ACTIONS] = _action_list(
+        user_input.get(CONF_TURN_ON_ACTIONS)
+    )
+    normalized[CONF_TURN_OFF_ACTIONS] = _action_list(
+        user_input.get(CONF_TURN_OFF_ACTIONS)
     )
     for key in (
         CONF_TEMPERATURE_ENTITY,
@@ -235,6 +261,14 @@ def _build_schema(defaults: dict[str, Any]) -> vol.Schema:
                 CONF_TURN_OFF_ACTION_ENTITIES,
                 default=defaults[CONF_TURN_OFF_ACTION_ENTITIES],
             ): EntitySelector(EntitySelectorConfig(multiple=True, reorder=True)),
+            vol.Optional(
+                CONF_TURN_ON_ACTIONS,
+                default=defaults[CONF_TURN_ON_ACTIONS],
+            ): ActionSelector(),
+            vol.Optional(
+                CONF_TURN_OFF_ACTIONS,
+                default=defaults[CONF_TURN_OFF_ACTIONS],
+            ): ActionSelector(),
             temperature_selector[0]: temperature_selector[1],
             power_selector[0]: power_selector[1],
             price_selector[0]: price_selector[1],

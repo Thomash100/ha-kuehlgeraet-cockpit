@@ -81,11 +81,12 @@ class KuehlgeraetCockpitPanel extends HTMLElement {
   }
 
   _row(label, value, icon = "mdi:circle-small") {
+    const display = value === null || value === undefined || value === "" ? "--" : value;
     return `
       <div class="row">
         <ha-icon icon="${icon}"></ha-icon>
         <span>${this._escape(label)}</span>
-        <strong>${this._escape(value || "--")}</strong>
+        <strong>${this._escape(display)}</strong>
       </div>
     `;
   }
@@ -388,6 +389,7 @@ class KuehlgeraetCockpitPanel extends HTMLElement {
             ${this._row("Strompreis", attrs.price_entity, "mdi:currency-eur")}
             ${this._row("Einschalt-Dienst", attrs.turn_on_service, "mdi:play")}
             ${this._row("Einschalt-Aktionen", this._list(attrs.turn_on_action_entities), "mdi:script-text-play-outline")}
+            ${this._row("Einschalt-Sequenz", attrs.turn_on_actions_count, "mdi:playlist-play")}
           </div>
           <div class="rows">
             ${this._row("Preis Minimum", attrs.price_min_entity, "mdi:arrow-down-bold")}
@@ -395,6 +397,7 @@ class KuehlgeraetCockpitPanel extends HTMLElement {
             ${this._row("Guenstig-Sensor", attrs.cheap_entity, "mdi:cash-check")}
             ${this._row("Ausschalt-Dienst", attrs.turn_off_service, "mdi:stop")}
             ${this._row("Ausschalt-Aktionen", this._list(attrs.turn_off_action_entities), "mdi:script-text-outline")}
+            ${this._row("Ausschalt-Sequenz", attrs.turn_off_actions_count, "mdi:playlist-remove")}
           </div>
         </section>
       </main>

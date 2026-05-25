@@ -9,6 +9,7 @@ Der aktive Pfad arbeitet ohne Blueprint. Temperatur, Leistung, Strompreis, Preis
 - echte Entity-Auswahl im Config-Flow statt Textfelder
 - mehrere Ziel-Entitaeten statt Shelly-Festlegung
 - konfigurierbare Ein- und Ausschalt-Dienste
+- komplette Home-Assistant-Action-Sequenzen fuer mehrere Dienste pro Richtung
 - zusaetzliche Ein-/Ausschalt-Aktionsentitaeten fuer Skripte, Szenen oder Helper mit `turn_on`
 - Strompreis wirkt direkt auf die Ein- und Ausschaltgrenzen
 - Preisbewertung ueber Preis-Min/Max oder eine beliebige Guenstig-Entitaet
@@ -55,7 +56,9 @@ Standarddienste:
 - Einschalten: `homeassistant.turn_on`
 - Ausschalten: `homeassistant.turn_off`
 
-Diese Dienste koennen in den Optionen geaendert werden, z. B. auf `switch.turn_on` / `switch.turn_off`. Fuer komplexere Ablaeufe koennen zusaetzliche Ein- und Ausschalt-Aktionsentitaeten ausgewaehlt werden, etwa `script.*`, `scene.*` oder Helper mit `turn_on`. Diese werden bei der jeweiligen Entscheidung per `homeassistant.turn_on` ausgeloest.
+Diese Dienste koennen in den Optionen geaendert werden, z. B. auf `switch.turn_on` / `switch.turn_off`. Fuer komplexere Ablaeufe koennen pro Richtung Home-Assistant-Action-Sequenzen konfiguriert werden. Damit lassen sich mehrere Dienste, Szenen, Scripts oder andere Automation-Aktionen nacheinander ausfuehren.
+
+Zusaetzlich gibt es einfache Ein- und Ausschalt-Aktionsentitaeten, etwa `script.*`, `scene.*` oder Helper mit `turn_on`. Diese werden bei der jeweiligen Entscheidung per `homeassistant.turn_on` ausgeloest.
 
 ## Entitaeten
 
@@ -77,7 +80,7 @@ Diese Dienste koennen in den Optionen geaendert werden, z. B. auf `switch.turn_o
 
 ### `kuehlgeraet_cockpit.evaluate_now`
 
-Bewertet die Regeln sofort. Mit `apply: true` wird eine geplante Aktion direkt ueber `homeassistant.turn_on` oder `homeassistant.turn_off` ausgefuehrt.
+Bewertet die Regeln sofort. Mit `apply: true` wird eine geplante Aktion ueber den konfigurierten Dienst, optionale Aktionsentitaeten und optionale Action-Sequenzen ausgefuehrt.
 
 ### `kuehlgeraet_cockpit.set_enabled`
 

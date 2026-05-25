@@ -24,6 +24,7 @@ Regellogik:
 - Es koennen mehrere Ziel-Entitaeten geschaltet werden; die erste Ziel-Entitaet liefert den primaeren Ein/Aus-Status.
 - Ein- und Ausschalten nutzen standardmaessig homeassistant.turn_on und homeassistant.turn_off.
 - Die Dienste koennen in den Optionen angepasst werden, z. B. switch.turn_on und switch.turn_off.
+- Pro Richtung koennen Home-Assistant-Action-Sequenzen mit mehreren Diensten hinterlegt werden.
 - Zusaetzliche Aktionsentitaeten wie script.*, scene.* oder Helper mit turn_on koennen je Richtung ausgewaehlt werden.
 - Temperatur, Leistung, Strompreis, Preis-Minimum, Preis-Maximum und Guenstig-Fenster sind frei konfigurierbare Entitaeten.
 - Der Strompreis verschiebt die Ein- und Ausschaltgrenzen zwischen guenstig und teuer.

@@ -4,16 +4,18 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from datetime import timedelta, timezone
+from inspect import isawaitable
 import logging
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant, State, callback
+from homeassistant.core import Context, HomeAssistant, State, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.event import (
     async_track_state_change_event,
     async_track_time_interval,
 )
+from homeassistant.helpers.script import Script, async_validate_actions_config
 from homeassistant.helpers.storage import Store
 import homeassistant.util.dt as dt_util
 
@@ -36,8 +38,10 @@ from .const import (
     CONF_TARGET_ENTITY,
     CONF_TEMPERATURE_ENTITY,
     CONF_TURN_OFF_ACTION_ENTITIES,
+    CONF_TURN_OFF_ACTIONS,
     CONF_TURN_OFF_SERVICE,
     CONF_TURN_ON_ACTION_ENTITIES,
+    CONF_TURN_ON_ACTIONS,
     CONF_TURN_ON_SERVICE,
     DATA_RUNTIME,
     DEFAULT_AUTO_APPLY,
@@ -59,8 +63,10 @@ from .const import (
     DEFAULT_TARGET_ENTITIES,
     DEFAULT_TEMPERATURE_ENTITY,
     DEFAULT_TURN_OFF_ACTION_ENTITIES,
+    DEFAULT_TURN_OFF_ACTIONS,
     DEFAULT_TURN_OFF_SERVICE,
     DEFAULT_TURN_ON_ACTION_ENTITIES,
+    DEFAULT_TURN_ON_ACTIONS,
     DEFAULT_TURN_ON_SERVICE,
     DOMAIN,
     NUMERIC_SETTING_DEFAULTS,
@@ -87,6 +93,8 @@ DEFAULT_SETTINGS: dict[str, Any] = {
     CONF_TURN_OFF_SERVICE: DEFAULT_TURN_OFF_SERVICE,
     CONF_TURN_ON_ACTION_ENTITIES: DEFAULT_TURN_ON_ACTION_ENTITIES,
     CONF_TURN_OFF_ACTION_ENTITIES: DEFAULT_TURN_OFF_ACTION_ENTITIES,
+    CONF_TURN_ON_ACTIONS: DEFAULT_TURN_ON_ACTIONS,
+    CONF_TURN_OFF_ACTIONS: DEFAULT_TURN_OFF_ACTIONS,
     CONF_TEMPERATURE_ENTITY: DEFAULT_TEMPERATURE_ENTITY,
     CONF_POWER_ENTITY: DEFAULT_POWER_ENTITY,
     CONF_PRICE_ENTITY: DEFAULT_PRICE_ENTITY,
@@ -120,6 +128,11 @@ LIST_ENTITY_SETTING_KEYS = (
     CONF_TURN_OFF_ACTION_ENTITIES,
 )
 
+ACTION_SETTING_KEYS = (
+    CONF_TURN_ON_ACTIONS,
+    CONF_TURN_OFF_ACTIONS,
+)
+
 
 def _entity_list(value: Any) -> list[str]:
     if value is None:
@@ -129,6 +142,12 @@ def _entity_list(value: Any) -> list[str]:
     if isinstance(value, list | tuple | set):
         return [str(item).strip() for item in value if str(item).strip()]
     return []
+
+
+def _action_list(value: Any) -> list[dict[str, Any]]:
+    if not isinstance(value, list):
+        return []
+    return [dict(item) for item in value if isinstance(item, dict)]
 
 
 def _primary_entity(value: Any) -> str:
@@ -180,6 +199,9 @@ class KuehlgeraetCockpitRuntime:
 
         for key in LIST_ENTITY_SETTING_KEYS:
             merged[key] = _entity_list(merged.get(key))
+
+        for key in ACTION_SETTING_KEYS:
+            merged[key] = _action_list(merged.get(key))
 
         for key in ENTITY_SETTING_KEYS:
             merged[key] = str(merged.get(key) or "").strip()
@@ -310,6 +332,8 @@ class KuehlgeraetCockpitRuntime:
                 "turn_off_service": settings[CONF_TURN_OFF_SERVICE],
                 "turn_on_action_entities": settings[CONF_TURN_ON_ACTION_ENTITIES],
                 "turn_off_action_entities": settings[CONF_TURN_OFF_ACTION_ENTITIES],
+                "turn_on_actions_count": len(settings[CONF_TURN_ON_ACTIONS]),
+                "turn_off_actions_count": len(settings[CONF_TURN_OFF_ACTIONS]),
                 "temperature_entity": settings[CONF_TEMPERATURE_ENTITY],
                 "power_entity": settings[CONF_POWER_ENTITY],
                 "price_entity": settings[CONF_PRICE_ENTITY],
@@ -408,6 +432,11 @@ class KuehlgeraetCockpitRuntime:
             if action == ACTION_TURN_ON
             else settings[CONF_TURN_OFF_ACTION_ENTITIES]
         )
+        actions = (
+            settings[CONF_TURN_ON_ACTIONS]
+            if action == ACTION_TURN_ON
+            else settings[CONF_TURN_OFF_ACTIONS]
+        )
         service_calls: list[str] = []
 
         try:
@@ -429,6 +458,10 @@ class KuehlgeraetCockpitRuntime:
                     blocking=True,
                 )
                 service_calls.append("homeassistant.turn_on")
+
+            if actions:
+                await self._async_run_actions(action, actions)
+                service_calls.append(f"action_sequence:{len(actions)}")
         except Exception as err:  # noqa: BLE001
             _LOGGER.exception("Kuehlgeraet Cockpit konnte %s nicht ausfuehren", action)
             status["apply_blocked_by"] = "service_error"
@@ -442,6 +475,28 @@ class KuehlgeraetCockpitRuntime:
         }[action]
         status["applied_services"] = service_calls
         status["last_action_at"] = dt_util.utcnow().isoformat()
+
+    async def _async_run_actions(
+        self,
+        action: str,
+        actions: list[dict[str, Any]],
+    ) -> None:
+        validated_actions = await async_validate_actions_config(self.hass, actions)
+        script = Script(
+            self.hass,
+            validated_actions,
+            f"Kuehlgeraet Cockpit {action}",
+            DOMAIN,
+            top_level=False,
+        )
+        try:
+            await script.async_run(context=Context())
+        finally:
+            unload = getattr(script, "async_unload", None)
+            if unload is not None:
+                unload_result = unload()
+                if isawaitable(unload_result):
+                    await unload_result
 
     def _split_service(self, service_name: str) -> tuple[str, str]:
         if "." not in service_name:
