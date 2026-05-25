@@ -19,6 +19,7 @@ Enthalten sind:
 - Binary-Sensoren fuer Preisfenster, Kompressorstatus und Preisdaten
 - Switches fuer Regel-Engine und Simulation
 - Number-Entitaeten fuer Live-Anpassung der Regelgrenzen
+- eigenes Brand-Icon und Logo fuer Home Assistant ab 2026.3
 
 Die Integration ist nicht auf Shelly begrenzt. Das Ziel kann jede Home-Assistant-Entitaet sein, die `homeassistant.turn_on` und `homeassistant.turn_off` unterstuetzt, oder ueber eigene Dienste und Action-Sequenzen geschaltet werden. Strompreise koennen ueber Preis-Min/Max-Entitaeten, Preisattribute oder eine beliebige Guenstig-Entitaet einfliessen.
 

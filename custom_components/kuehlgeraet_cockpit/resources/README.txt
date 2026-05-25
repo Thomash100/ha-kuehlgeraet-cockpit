@@ -18,6 +18,8 @@ Wichtige Entitaeten:
 Web-Cockpit:
 - Sidebar-Pfad: /kuehlgeraet-cockpit
 - JavaScript-Modul: custom_components/kuehlgeraet_cockpit/frontend/kuehlgeraet-cockpit-panel.js
+- Cockpit-Icon: custom_components/kuehlgeraet_cockpit/frontend/cockpit-icon.svg
+- Brand-Bilder: custom_components/kuehlgeraet_cockpit/brand/
 
 Regellogik:
 - Ziele werden im Home-Assistant-Entity-Dropdown ausgewaehlt.

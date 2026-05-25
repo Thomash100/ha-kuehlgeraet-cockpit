@@ -1,6 +1,7 @@
 const STATUS_ENTITY = "sensor.kuehlgeraet_cockpit_status";
 const ENGINE_SWITCH = "switch.kuehlgeraet_cockpit_regel_engine";
 const SIMULATION_SWITCH = "switch.kuehlgeraet_cockpit_simulation";
+const PANEL_BASE = "/kuehlgeraet_cockpit/frontend";
 
 class KuehlgeraetCockpitPanel extends HTMLElement {
   constructor() {
@@ -193,6 +194,20 @@ class KuehlgeraetCockpitPanel extends HTMLElement {
           font-weight: 760;
           letter-spacing: 0;
         }
+        .title {
+          align-items: center;
+          display: grid;
+          gap: 14px;
+          grid-template-columns: 64px minmax(0, 1fr);
+        }
+        .brand-icon {
+          aspect-ratio: 1;
+          border-radius: 14px;
+          box-shadow: 0 12px 26px rgba(18, 60, 105, 0.2);
+          display: block;
+          height: 64px;
+          width: 64px;
+        }
         .subline {
           display: flex;
           flex-wrap: wrap;
@@ -348,16 +363,21 @@ class KuehlgeraetCockpitPanel extends HTMLElement {
           .metric { min-height: 126px; padding: 14px; }
           .metric strong { font-size: 23px; }
           h1 { font-size: 28px; }
+          .title { grid-template-columns: 52px minmax(0, 1fr); }
+          .brand-icon { border-radius: 12px; height: 52px; width: 52px; }
         }
       </style>
       <main class="shell">
         <header>
-          <div>
-            <h1>Kuehlgeraet Cockpit</h1>
-            <div class="subline">
-              <span class="badge"><ha-icon icon="mdi:state-machine"></ha-icon>${this._escape(mode)}</span>
-              <span>${this._escape(this._list(attrs.target_entities) || attrs.target_entity || "kein Ziel")}</span>
-              <span>${this._escape(attrs.updated_at || "")}</span>
+          <div class="title">
+            <img class="brand-icon" src="${PANEL_BASE}/cockpit-icon.svg" alt="" loading="eager">
+            <div>
+              <h1>Kuehlgeraet Cockpit</h1>
+              <div class="subline">
+                <span class="badge"><ha-icon icon="mdi:state-machine"></ha-icon>${this._escape(mode)}</span>
+                <span>${this._escape(this._list(attrs.target_entities) || attrs.target_entity || "kein Ziel")}</span>
+                <span>${this._escape(attrs.updated_at || "")}</span>
+              </div>
             </div>
           </div>
           <div class="toolbar">

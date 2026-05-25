@@ -19,6 +19,7 @@ Der aktive Pfad arbeitet ohne Blueprint. Temperatur, Leistung, Strompreis, Preis
 - Kompressorschutz ueber optionale Leistungs-Entitaet
 - Simulationsmodus ohne Schaltbefehle
 - Web-Cockpit als Home-Assistant-Sidebar-Panel
+- eigenes Brand-Icon und Logo fuer Home Assistant ab 2026.3
 - Sensoren, Binary-Sensoren, Switches und Number-Entitaeten fuer offene Weiterverarbeitung
 
 ## Preislogik
@@ -109,6 +110,7 @@ Setzt eine numerische Laufzeit-Einstellung wie `cheap_on_temp`, `expensive_off_t
 - `engine.py`: reine Regel-Engine ohne Home-Assistant-Abhaengigkeit
 - `runtime.py`: liest Home-Assistant-Zustaende, verfolgt Aenderungen und fuehrt Aktionen aus
 - `frontend/`: Web-Cockpit als Custom Panel
+- `brand/`: lokales Integrations-Icon und Logo fuer Home Assistant
 - `sensor.py`, `binary_sensor.py`, `switch.py`, `number.py`: offene HA-Entitaeten fuer Dashboard und Automationen
 
 ## Hinweis
